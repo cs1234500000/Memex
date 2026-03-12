@@ -39,10 +39,10 @@
     .hero-actions{display:flex;gap:1.2rem;margin-bottom:3.5rem}
     .btn-primary{font:500 .83rem var(--sans);letter-spacing:.04em;color:#fff;background:var(--amber);border:none;padding:.88rem 2.1rem}
     .btn-secondary{font:400 .6rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--border2);padding:.88rem 1.65rem}
-    .hero-stats{display:flex;gap:2.5rem;padding-top:2rem;border-top:1px solid var(--border)}
+    .hero-stats{display:flex;gap:2.5rem;padding-top:2rem;border-top:1px solid var(--border);width:fit-content;max-width:520px}
     .hs-num{font:700 1.8rem var(--display);line-height:1}
     .hs-label{font:400 .52rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1.5}
-    .hero-right{display:flex;align-items:center;justify-content:center} #kgCanvas{width:100%;min-height:480px}
+    .hero-right{display:flex;align-items:center;justify-content:center} #kgCanvas{width:100%;height:560px;min-height:480px}
     .section{max-width:1100px;margin:0 auto;padding:8rem 2.75rem}
     .sec-label{font:400 .57rem var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem}
     h2.display{font-family:var(--display);font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:400;line-height:1.1;letter-spacing:-.025em;margin-bottom:1.5rem}
@@ -52,7 +52,7 @@
     .graveyard,.thread-demo{border:1px solid var(--border);background:var(--bg2)}
     .graveyard-header,.td-header{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);font:400 .55rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
     .grave-item{display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;padding:.9rem 1.25rem;border-bottom:1px solid var(--border)}
-    .grave-title{font-size:.82rem;color:var(--cream2}.grave-meta{font:400 .52rem var(--mono);color:var(--muted)}
+    .grave-title{font-size:.82rem;color:var(--cream2)}.grave-meta{font:400 .52rem var(--mono);color:var(--muted)}
     .grave-fate{font:400 .49rem var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.17rem .44rem;border:1px solid var(--border2);color:var(--muted)}
     .how-wrap,.sunday-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
     .how-inner,.sunday-inner{max-width:1100px;margin:0 auto;padding:8rem 2.75rem}
@@ -131,7 +131,7 @@
   <section class="section"><div class="sec-label">04 · Features</div><h2 class="display">Everything a second brain<br/>should <em>actually</em> do.</h2><div class="features-grid"><div class="feat"><div class="feat-num">01</div><h4>Thread Detection</h4><p>Recurring themes across sources and months.</p></div><div class="feat"><div class="feat-num">02</div><h4>The Sunday Letter</h4><p>Personal reflection every week.</p></div><div class="feat"><div class="feat-num">03</div><h4>Ask Your Archive</h4><p>Synthesize your evolving stance by topic.</p></div></div></section>
   <section class="section" id="pricing" style="padding-top:0"><div class="sec-label">05 · Pricing</div><h2 class="display">Built for thinkers.<br/>Priced for <em>individuals.</em></h2><div class="pricing-grid"><div class="price-card"><div class="price-tier">Curious</div><div class="price-amount">Free</div><ul class="price-items"><li>30 pieces / month</li><li>3 active threads</li></ul><button class="price-cta">Start free</button></div><div class="price-card featured"><div class="price-tier">Thinker</div><div class="price-amount">$18</div><ul class="price-items"><li>Unlimited ingestion</li><li>Sunday Letter</li><li>Ask Your Archive</li></ul><button class="price-cta">Start thinking deeper</button></div><div class="price-card"><div class="price-tier">Scholar</div><div class="price-amount">$45</div><ul class="price-items"><li>Everything in Thinker</li><li>API access</li></ul><button class="price-cta">For serious thinkers</button></div></div></section>
   <section class="cta-section"><div class="cta-label">Early Access Open</div><h2 class="cta-h">Start compounding<br/>your <em>thinking.</em></h2><p class="cta-sub">Join the waitlist. The first Sunday Letter that feels like a mirror.</p><div class="waitlist-form"><input class="waitlist-input" type="email" placeholder="your@email.com"/><button class="waitlist-btn">Join waitlist →</button></div></section>
-  <footer><div class="f-logo">Memex</div><div class="f-links"><a href="#" class="f-link">About</a><a href="#" class="f-link">Blog</a><a href="#" class="f-link">Twitter</a><a href="#" class="f-link">Contact</a></div><div class="f-meta">hello@memex.so · memex.so<br/>© 2025 Memex. All rights reserved.</div></footer>
+  <footer><div class="f-logo">Memex</div><div class="f-links"><a href="#" class="f-link">About</a><a href="#" class="f-link">Blog</a><a href="#" class="f-link">Twitter</a><a href="#" class="f-link">Contact</a></div><div class="f-meta">hello@withmemex.com · withmemex.com<br/>© 2025 Memex. All rights reserved.</div></footer>
 
   <script>
     const nav = document.getElementById("mainNav");
@@ -141,12 +141,220 @@
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       const dpr = window.devicePixelRatio || 1;
-      let w = 0, h = 0, t = 0;
-      const nodes = [{x:.2,y:.3,r:6,c:"#c4803a"},{x:.45,y:.5,r:8,c:"#c4803a"},{x:.75,y:.25,r:6,c:"#6b88c4"},{x:.62,y:.75,r:5,c:"#52a374"}];
-      const edges = [[0,1],[1,2],[1,3],[0,3],[2,3]];
-      function resize(){const r=canvas.getBoundingClientRect();w=r.width;h=Math.max(480,r.height);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
-      function draw(){ctx.clearRect(0,0,w,h);t+=.01;const pts=nodes.map((n,i)=>({x:n.x*w+Math.sin(t+i)*8,y:n.y*h+Math.cos(t*1.2+i)*6,...n}));edges.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(pts[a].x,pts[a].y);ctx.lineTo(pts[b].x,pts[b].y);ctx.strokeStyle="rgba(240,235,224,.15)";ctx.stroke()});pts.forEach((p)=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle="#09080a";ctx.fill();ctx.strokeStyle=p.c;ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,p.r*.45,0,Math.PI*2);ctx.fillStyle=p.c;ctx.fill();});requestAnimationFrame(draw);}
-      window.addEventListener("resize", resize, { passive: true }); resize(); draw();
+      let W = 0;
+      let H = 0;
+      let frame = 0;
+
+      const nodeData = [
+        { id: "memex", label: "Memex", color: "#c4803a", r: 8.5, cx: 0.48, cy: 0.5, cluster: "memex" },
+        { id: "learn", label: "Learning", color: "rgba(196,128,58,.9)", r: 6.5, cx: 0.17, cy: 0.27, cluster: "A" },
+        { id: "farnam", label: "Farnam Street", color: "rgba(210,190,155,.85)", r: 4, cx: 0.04, cy: 0.13, cluster: "A" },
+        { id: "hublab", label: "Huberman Lab", color: "rgba(82,163,116,.9)", r: 4.5, cx: 0.03, cy: 0.4, cluster: "A" },
+        { id: "ali", label: "Ali Abdaal", color: "rgba(210,190,155,.85)", r: 3.5, cx: 0.28, cy: 0.1, cluster: "A" },
+        { id: "space", label: "Spaced Rep.", color: "rgba(82,163,116,.7)", r: 3, cx: 0.07, cy: 0.54, cluster: "A" },
+        { id: "found", label: "Founders", color: "rgba(100,140,210,.9)", r: 6.5, cx: 0.76, cy: 0.24, cluster: "B" },
+        { id: "naval", label: "Naval", color: "rgba(100,140,210,.75)", r: 4, cx: 0.91, cy: 0.1, cluster: "B" },
+        { id: "tim", label: "Tim Ferriss", color: "rgba(100,140,210,.75)", r: 3.5, cx: 0.94, cy: 0.36, cluster: "B" },
+        { id: "a16z", label: "a16z", color: "rgba(160,175,210,.8)", r: 3.5, cx: 0.64, cy: 0.1, cluster: "B" },
+        { id: "yc", label: "YC Essay", color: "rgba(160,175,210,.7)", r: 3, cx: 0.88, cy: 0.45, cluster: "B" },
+        { id: "write", label: "Writing", color: "rgba(140,180,120,.9)", r: 6, cx: 0.5, cy: 0.8, cluster: "C" },
+        { id: "draft", label: "Draft · Apr", color: "rgba(190,175,140,.8)", r: 3.5, cx: 0.32, cy: 0.9, cluster: "C" },
+        { id: "note", label: "Your note", color: "rgba(190,175,140,.8)", r: 4, cx: 0.65, cy: 0.9, cluster: "C" },
+        { id: "lex", label: "Lex Fridman", color: "rgba(100,140,210,.75)", r: 3.5, cx: 0.78, cy: 0.74, cluster: "C" },
+        { id: "sunday", label: "Sunday Letter", color: "rgba(196,128,58,.7)", r: 3, cx: 0.36, cy: 0.72, cluster: "C" }
+      ];
+
+      const edges = [
+        { a: "learn", b: "memex", type: "bridge" },
+        { a: "found", b: "memex", type: "bridge" },
+        { a: "write", b: "memex", type: "bridge" },
+        { a: "farnam", b: "learn", type: "inner" },
+        { a: "hublab", b: "learn", type: "inner" },
+        { a: "ali", b: "learn", type: "inner" },
+        { a: "space", b: "hublab", type: "inner" },
+        { a: "farnam", b: "ali", type: "inner" },
+        { a: "naval", b: "found", type: "inner" },
+        { a: "tim", b: "found", type: "inner" },
+        { a: "a16z", b: "found", type: "inner" },
+        { a: "yc", b: "tim", type: "inner" },
+        { a: "naval", b: "a16z", type: "inner" },
+        { a: "draft", b: "write", type: "inner" },
+        { a: "note", b: "write", type: "inner" },
+        { a: "lex", b: "write", type: "inner" },
+        { a: "sunday", b: "write", type: "inner" },
+        { a: "note", b: "lex", type: "inner" },
+        { a: "learn", b: "found", type: "cross" },
+        { a: "learn", b: "write", type: "cross" },
+        { a: "found", b: "write", type: "cross" },
+        { a: "hublab", b: "write", type: "cross" },
+        { a: "naval", b: "learn", type: "cross" }
+      ];
+
+      let nodes = [];
+
+      function rebuildPositions() {
+        nodes = nodeData.map((d, i) => ({
+          ...d,
+          x: d.cx * W,
+          y: d.cy * H,
+          phase: i * 1.05,
+          driftR: d.id === "memex" ? 3 : d.r > 6 ? 6 : 10 + i * 1.5,
+          driftSpeed: 0.0003 + i * 0.000035
+        }));
+      }
+
+      function resize() {
+        const r = canvas.getBoundingClientRect();
+        W = r.width;
+        H = Math.max(480, r.height);
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        rebuildPositions();
+      }
+
+      const particleEdges = edges.map((e, i) => ({
+        idx: i,
+        t: i / edges.length,
+        speed: e.type === "bridge" ? 0.0022 : 0.0013,
+        size: e.type === "bridge" ? 1.6 : 1.1,
+        active: e.type === "bridge" || (e.type === "inner" && i % 2 === 0)
+      }));
+
+      const edgeReveal = edges.map((_, i) => ({ progress: 0, delay: 20 + i * 12 }));
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function getNode(id) {
+        return nodes.find((n) => n.id === id);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        frame++;
+
+        nodes.forEach((n) => {
+          const t = frame * n.driftSpeed;
+          const ox = Math.sin(t + n.phase) * n.driftR;
+          const oy = Math.cos(t * 1.18 + n.phase) * (n.driftR * 0.6);
+          n.x = n.cx * W + ox;
+          n.y = n.cy * H + oy;
+        });
+
+        const glowDefs = [
+          { id: "learn", color: "196,128,58", r: 90 },
+          { id: "found", color: "80,120,200", r: 88 },
+          { id: "write", color: "100,170,90", r: 80 },
+          { id: "memex", color: "196,128,58", r: 70 }
+        ];
+
+        glowDefs.forEach((g) => {
+          const n = getNode(g.id);
+          if (!n) return;
+          const pulse = Math.sin(frame * 0.018 + n.phase) * 0.5 + 0.5;
+          const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, g.r);
+          grad.addColorStop(0, `rgba(${g.color},${0.07 + pulse * 0.04})`);
+          grad.addColorStop(1, "transparent");
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, g.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        edges.forEach((e, i) => {
+          const a = getNode(e.a);
+          const b = getNode(e.b);
+          if (!a || !b) return;
+          const er = edgeReveal[i];
+          if (frame > er.delay) er.progress = Math.min(1, er.progress + 0.014);
+          if (er.progress <= 0) return;
+
+          const ex = a.x + (b.x - a.x) * easeOut(er.progress);
+          const ey = a.y + (b.y - a.y) * easeOut(er.progress);
+          const flicker = Math.sin(frame * 0.025 + i * 0.7) * 0.03;
+
+          let strokeColor = "rgba(240,235,224,.04)";
+          let lw = 0.4;
+          if (e.type === "bridge") {
+            strokeColor = `rgba(196,128,58,${0.28 + flicker})`;
+            lw = 1.1;
+          } else if (e.type === "inner") {
+            strokeColor = `rgba(240,235,224,${0.09 + flicker * 0.5})`;
+            lw = 0.6;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(ex, ey);
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = lw;
+          ctx.stroke();
+        });
+
+        particleEdges.forEach((p) => {
+          if (!p.active) return;
+          const e = edges[p.idx];
+          if (edgeReveal[p.idx].progress < 0.9) return;
+          p.t = (p.t + p.speed) % 1;
+          const fade = p.t < 0.12 ? p.t / 0.12 : p.t > 0.85 ? (1 - p.t) / 0.15 : 1;
+          const a = getNode(e.a);
+          const b = getNode(e.b);
+          if (!a || !b) return;
+          const px = a.x + (b.x - a.x) * p.t;
+          const py = a.y + (b.y - a.y) * p.t;
+          const col = e.type === "bridge" ? "210,145,60" : "220,215,200";
+          ctx.beginPath();
+          ctx.arc(px, py, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${col},${fade * (e.type === "bridge" ? 0.85 : 0.45)})`;
+          ctx.fill();
+        });
+
+        nodes.forEach((n) => {
+          const pulse = Math.sin(frame * 0.02 + n.phase) * 0.5 + 0.5;
+          const isMemex = n.id === "memex";
+          const isHub = n.r > 5.5 && !isMemex;
+          const isLeaf = !isMemex && !isHub;
+
+          if (isMemex) {
+            const g2 = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 26);
+            g2.addColorStop(0, `rgba(220,148,58,${0.28 + pulse * 0.12})`);
+            g2.addColorStop(1, "transparent");
+            ctx.fillStyle = g2;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 26, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fillStyle = "#09080a";
+          ctx.fill();
+          ctx.strokeStyle = isMemex ? `rgba(196,128,58,${0.9 + pulse * 0.1})` : n.color;
+          ctx.lineWidth = isMemex ? 1.5 : isHub ? 1.1 : 0.8;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r * (isMemex ? 0.42 : isHub ? 0.38 : 0.44), 0, Math.PI * 2);
+          ctx.fillStyle = isMemex ? `rgba(220,158,68,${0.9 + pulse * 0.1})` : n.color;
+          ctx.fill();
+
+          const labelAlpha = isMemex ? 0.65 + pulse * 0.2 : isHub ? 0.35 + pulse * 0.12 : 0.2;
+          ctx.save();
+          ctx.font = `400 ${isMemex ? 11 : isHub ? 10 : 9}px 'Syne', sans-serif`;
+          ctx.fillStyle = `rgba(240,235,224,${labelAlpha})`;
+          ctx.textAlign = "center";
+          ctx.fillText(n.label, n.x, n.y - n.r - 7);
+          ctx.restore();
+        });
+
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+      resize();
+      draw();
     })();
   </script>
 </body>
