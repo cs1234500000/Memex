@@ -1,0 +1,9 @@
+{
+  "name": "memex-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Memex startup landing page with signup capture endpoint.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

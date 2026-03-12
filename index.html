@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memex — The Compounding Second Brain</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Syne:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#09080a;--bg2:#0d0c0f;--bg3:#131116;--cream:#f0ebe0;--cream2:#b8b0a0;--muted:#585450;--border:rgba(240,235,224,.06);--border2:rgba(240,235,224,.11);--amber:#c4803a;--amber2:#d9944a;--green2:#52a374;--display:'Playfair Display',Georgia,serif;--sans:'Syne',sans-serif;--mono:'JetBrains Mono',monospace}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth} body{background:var(--bg);color:var(--cream);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+    body::after{content:"";position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.55}
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.25rem 2.75rem;border-bottom:1px solid transparent;transition:background .4s,border-color .4s}
+    nav.scrolled{background:rgba(9,8,10,.92);backdrop-filter:blur(24px);border-color:var(--border)}
+    .nav-logo{display:flex;gap:.55rem;align-items:center;color:var(--cream);text-decoration:none;font:700 1.3rem var(--display)}
+    .nav-logo-icon{width:26px;height:26px}
+    .nav-center{display:flex;gap:2.5rem}
+    .nav-link{font:400 .6rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;position:relative}
+    .nav-link::after{content:"";position:absolute;left:0;right:100%;bottom:-2px;height:1px;background:var(--cream2);transition:right .25s}
+    .nav-link:hover{color:var(--cream2)} .nav-link:hover::after{right:0}
+    .nav-right{display:flex;gap:1rem;align-items:center}
+    .nav-badge{font:400 .57rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border2);padding:.22rem .6rem}
+    .btn-nav{font:500 .78rem var(--sans);background:var(--cream);color:var(--bg);border:none;padding:.52rem 1.35rem;cursor:pointer}
+    .hero{min-height:100vh;display:grid;grid-template-columns:1.35fr .85fr;gap:0;align-items:center;padding:8rem 2.75rem 5rem;position:relative;overflow:hidden}
+    .hero-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(80px)}
+    .orb1{width:700px;height:700px;background:radial-gradient(circle,rgba(196,128,58,.055),transparent 65%);top:-15%;left:-10%}
+    .orb2{width:600px;height:600px;background:radial-gradient(circle,rgba(82,163,116,.03),transparent 65%);bottom:-20%;right:-5%}
+    .orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(240,235,224,.015),transparent 65%);top:40%;left:30%}
+    .hero-left,.hero-right{position:relative;z-index:2}
+    .hero-kicker{font:400 .58rem var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:flex;gap:.8rem;align-items:center;margin-bottom:2.5rem}
+    .kicker-rule{width:24px;height:1px;background:var(--muted);opacity:.4}
+    .hero-line{overflow:hidden;margin-bottom:.15rem}.hero-line-inner{display:block}
+    .h-small{font-family:var(--display);font-size:clamp(1.3rem,2.2vw,1.9rem);color:var(--cream)}
+    .h-big{font-family:var(--display);font-size:clamp(3.5rem,6.4vw,6.4rem);line-height:.94;letter-spacing:-.033em;color:var(--cream)}
+    .h-resolve{font-family:var(--display);font-size:clamp(1.9rem,3.7vw,3.7rem);line-height:1.05;letter-spacing:-.025em}
+    .h-resolve em{font-style:italic;color:var(--cream2)} .h-resolve strong{font-weight:700;color:var(--cream)}
+    .hero-divider{width:48px;height:1px;background:var(--border2);margin:2rem 0}
+    .hero-sub{font-size:.92rem;line-height:1.75;color:var(--cream2);max-width:620px;margin-bottom:2.5rem}
+    .hero-actions{display:flex;gap:1.2rem;margin-bottom:3.5rem}
+    .btn-primary{font:500 .83rem var(--sans);letter-spacing:.04em;color:#fff;background:var(--amber);border:none;padding:.88rem 2.1rem}
+    .btn-secondary{font:400 .6rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--border2);padding:.88rem 1.65rem}
+    .hero-stats{display:flex;gap:2.5rem;padding-top:2rem;border-top:1px solid var(--border)}
+    .hs-num{font:700 1.8rem var(--display);line-height:1}
+    .hs-label{font:400 .52rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1.5}
+    .hero-right{display:flex;align-items:center;justify-content:center} #kgCanvas{width:100%;min-height:480px}
+    .section{max-width:1100px;margin:0 auto;padding:8rem 2.75rem}
+    .sec-label{font:400 .57rem var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem}
+    h2.display{font-family:var(--display);font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:400;line-height:1.1;letter-spacing:-.025em;margin-bottom:1.5rem}
+    h2.display em{font-style:italic;color:var(--cream2)}
+    .problem-grid,.how-grid,.sunday-inner{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;margin-top:3rem}
+    .problem-prose{font-size:1rem;line-height:1.95;color:var(--cream2)} .problem-prose p{margin-bottom:1.25rem}
+    .graveyard,.thread-demo{border:1px solid var(--border);background:var(--bg2)}
+    .graveyard-header,.td-header{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);font:400 .55rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+    .grave-item{display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;padding:.9rem 1.25rem;border-bottom:1px solid var(--border)}
+    .grave-title{font-size:.82rem;color:var(--cream2}.grave-meta{font:400 .52rem var(--mono);color:var(--muted)}
+    .grave-fate{font:400 .49rem var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.17rem .44rem;border:1px solid var(--border2);color:var(--muted)}
+    .how-wrap,.sunday-wrap{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .how-inner,.sunday-inner{max-width:1100px;margin:0 auto;padding:8rem 2.75rem}
+    .step{display:grid;grid-template-columns:2.75rem 1fr;gap:1.5rem;padding:2rem 0;border-bottom:1px solid var(--border)}
+    .step-num{font-family:var(--display);color:rgba(240,235,224,.1)} .step-body h4{font-family:var(--display);margin-bottom:.5rem}
+    .step-body p{font-size:.83rem;color:var(--muted);line-height:1.8}
+    .td-entries{padding:0 1.4rem}.td-entry{display:grid;grid-template-columns:2.2rem 1fr;gap:1rem;padding:1.2rem 0;border-bottom:1px solid var(--border)}
+    .td-date,.td-source{font-family:var(--mono);font-size:.5rem;color:var(--muted)} .td-quote{font-family:var(--display);font-size:.83rem;font-style:italic;color:rgba(240,235,224,.75)}
+    .features-grid,.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:3rem}
+    .feat,.price-card{background:var(--bg);padding:2.5rem 2rem}
+    .feat-num{font:700 2.8rem var(--display);color:rgba(240,235,224,.04);margin-bottom:.75rem}
+    .feat h4{font-family:var(--display);margin-bottom:.6rem}.feat p{font-size:.82rem;color:var(--muted);line-height:1.8}
+    .price-tier,.price-period{font-family:var(--mono);font-size:.57rem;color:var(--muted)}
+    .price-amount{font:700 3.5rem var(--display);line-height:1;margin:.25rem 0}
+    .price-items{list-style:none;display:flex;flex-direction:column;gap:.75rem;margin-top:1.2rem}
+    .price-items li{font-size:.82rem;color:var(--cream2);display:flex;gap:.75rem}
+    .price-items li::before{content:"—";font-family:var(--mono);color:var(--muted)}
+    .price-cta{width:100%;margin-top:2rem;padding:.85rem;border:1px solid var(--border2);background:transparent;color:var(--cream2)}
+    .featured{background:var(--bg3)} .featured .price-cta{background:var(--cream);color:var(--bg)}
+    .cta-section{padding:11rem 2.75rem;text-align:center;position:relative}
+    .cta-label{font-family:var(--mono);font-size:.57rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem}
+    .cta-h{font-family:var(--display);font-size:clamp(2.5rem,5.5vw,5.5rem);font-weight:400;line-height:1.06;margin:0 auto 1.5rem}
+    .cta-h em{font-style:italic;color:var(--cream2)} .cta-sub{font-size:1rem;color:var(--muted);max-width:420px;margin:0 auto 3rem;line-height:1.8}
+    .waitlist-form{display:flex;max-width:400px;margin:0 auto}.waitlist-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-right:none;padding:.9rem 1.2rem;color:var(--cream)}
+    .waitlist-btn{background:var(--amber);border:1px solid var(--amber);padding:.9rem 1.5rem;color:#fff;white-space:nowrap}
+    footer{border-top:1px solid var(--border);padding:2.5rem 2.75rem;display:flex;justify-content:space-between;align-items:center}
+    .f-logo{font:700 1.2rem var(--display);display:flex;gap:.5rem;align-items:center}.f-links{display:flex;gap:2.25rem}
+    .f-link{font:400 .55rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-decoration:none}
+    .f-meta{font:400 .53rem var(--mono);letter-spacing:.06em;color:var(--muted);text-align:right;line-height:1.9}
+    @media(max-width:900px){nav{padding:1rem 1.5rem}.nav-center{display:none}.hero{grid-template-columns:1fr;padding:8rem 1.5rem 4rem;text-align:center}.hero-right{order:-1;margin-bottom:1rem}.hero-stats,.hero-kicker,.hero-actions{justify-content:center}.problem-grid,.how-grid,.sunday-inner{grid-template-columns:1fr;gap:3rem}.features-grid,.pricing-grid{grid-template-columns:1fr}.section,.how-inner,.sunday-inner{padding:5rem 1.5rem}.cta-section{padding:6rem 1.5rem}footer{flex-direction:column;gap:1.5rem;text-align:center}.f-meta{text-align:center}}
+  </style>
+</head>
+<body>
+  <nav id="mainNav">
+    <a class="nav-logo" href="#">
+      <svg class="nav-logo-icon" viewBox="0 0 160 160" fill="none"><line x1="28" y1="128" x2="28" y2="32" stroke="#ff7a35" stroke-width="1.6"/><line x1="28" y1="32" x2="80" y2="86" stroke="#ff7a35" stroke-width="1.6"/><line x1="80" y1="86" x2="132" y2="32" stroke="#ff7a35" stroke-width="1.6"/><line x1="132" y1="32" x2="132" y2="128" stroke="#ff7a35" stroke-width="1.6"/><circle cx="80" cy="86" r="9" fill="#080a0e" stroke="#ff7a35" stroke-width="1.4"/><circle cx="80" cy="86" r="5" fill="#ff9a5c"/></svg>
+      Memex
+    </a>
+    <div class="nav-center"><a href="#problem" class="nav-link">Problem</a><a href="#how" class="nav-link">How it works</a><a href="#sunday" class="nav-link">Sunday Letter</a><a href="#pricing" class="nav-link">Pricing</a></div>
+    <div class="nav-right"><div class="nav-badge">Early Access</div><button class="btn-nav">Join waitlist</button></div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-orb orb1"></div><div class="hero-orb orb2"></div><div class="hero-orb orb3"></div>
+    <div class="hero-left">
+      <div class="hero-kicker"><div class="kicker-rule"></div>The Compounding Second Brain<div class="kicker-rule"></div></div>
+      <div class="hero-line" style="margin-bottom:.4rem"><span class="hero-line-inner h-small">Your ideas</span></div>
+      <div class="hero-line" style="margin-bottom:1.75rem"><span class="hero-line-inner h-big">don't die.</span></div>
+      <div class="hero-line" style="margin-bottom:.25rem"><span class="hero-line-inner h-resolve">They <em>connect.</em></span></div>
+      <div class="hero-line"><span class="hero-line-inner h-resolve">They <strong>compound.</strong></span></div>
+      <div class="hero-divider"></div>
+      <p class="hero-sub">Memex watches everything you read, listen to, and watch — and quietly builds a <strong>living map of your mind</strong> that grows smarter with every piece of content. Not a highlights dump. A thinking partner that remembers what you've forgotten and finds the threads you never knew existed.</p>
+      <div class="hero-actions"><button class="btn-primary">Start your second brain →</button><button class="btn-secondary">See how it works</button></div>
+      <div class="hero-stats"><div class="hs-item"><div class="hs-num">10K+</div><div class="hs-label">Hours consumed / year<br/>by the avg. knowledge worker</div></div><div class="hs-item"><div class="hs-num">&lt; 5%</div><div class="hs-label">That actually shapes<br/>how they think</div></div><div class="hs-item"><div class="hs-num">0</div><div class="hs-label">Tools that compound<br/>it over time</div></div></div>
+    </div>
+    <div class="hero-right"><canvas id="kgCanvas"></canvas></div>
+  </section>
+
+  <section class="section" id="problem">
+    <div class="sec-label">01 · The Problem</div>
+    <h2 class="display">You consume constantly.<br/>Almost <em>none of it sticks.</em></h2>
+    <div class="problem-grid">
+      <div class="problem-prose">
+        <p>The problem isn't that you read too much. It's that every piece of content you consume <strong>dies in isolation.</strong></p>
+        <p>Readwise saves your highlights in a flat list. Notion is a graveyard of half-finished notes. Pocket has 400 unread articles.</p>
+        <p>Nothing you currently use watches across time. Nothing connects a podcast from January to an article from March to a note you wrote six months ago.</p>
+      </div>
+      <div class="graveyard"><div class="graveyard-header">A typical week's intake — fate unknown</div><div class="grave-item"><div>🎧</div><div><div class="grave-title">Lex Fridman · Sam Altman Episode</div><div class="grave-meta">3h 12min · listened 80%</div></div><div class="grave-fate">forgotten</div></div><div class="grave-item"><div>✦</div><div><div class="grave-title">Memex: All five connect to one thread</div><div class="grave-meta">Non-linear returns on deliberate learning</div></div><div class="grave-fate">surfaced</div></div></div>
+    </div>
+  </section>
+
+  <div class="how-wrap" id="how"><div class="how-inner"><div class="sec-label">02 · How It Works</div><h2 class="display">Four layers. One <em>living</em><br/><strong>knowledge engine.</strong></h2><div class="how-grid"><div><div class="step"><div class="step-num">01</div><div class="step-body"><h4>Ingest Everything</h4><p>Browser extension captures articles as you read. Podcast RSS feeds sync automatically.</p></div></div><div class="step"><div class="step-num">02</div><div class="step-body"><h4>Semantic Memory Across Time</h4><p>Every new piece is compared against your entire history — not just last week.</p></div></div><div class="step"><div class="step-num">03</div><div class="step-body"><h4>The Connection Engine</h4><p>Memex detects when new content reinforces or extends something you've encountered before.</p></div></div><div class="step"><div class="step-num">04</div><div class="step-body"><h4>The Sunday Letter</h4><p>Every Sunday, a personal letter: which beliefs are crystallizing and being challenged.</p></div></div></div><div class="thread-demo"><div class="td-header">Thread · "Compounding & Learning"</div><div class="td-entries"><div class="td-entry"><div class="td-date">Jan<br/>12</div><div><div class="td-source">Article · Farnam Street</div><div class="td-quote">"The biggest returns come from reading the same great books multiple times."</div></div></div><div class="td-entry"><div class="td-date">Feb<br/>28</div><div><div class="td-source">Podcast · Huberman Lab</div><div class="td-quote">"Spaced repetition rewires synaptic architecture."</div></div></div></div></div></div></div></div>
+
+  <div class="sunday-wrap" id="sunday"><div class="sunday-inner"><div><div class="sec-label">03 · The Sunday Letter</div><h2 class="display">Your week in thought,<br/><em>written back to you.</em></h2><p style="font-size:.95rem;color:var(--muted);line-height:1.9">Every Sunday, Memex sends you a personal letter — a mirror of your intellectual week.</p></div><div><div style="background:var(--bg3);border:1px solid var(--border2);padding:2.5rem"><div style="font-family:var(--mono);font-size:.54rem;color:var(--muted);margin-bottom:1rem">Sunday, March 9th · Your weekly reflection</div><div style="font-family:var(--display);font-size:1.15rem;margin-bottom:1rem">Good morning.</div><div style="font-size:.84rem;color:var(--cream2);line-height:1.9">This week you consumed 14 pieces of content. Memex surfaced one thread crystallizing over 4 months.</div></div></div></div></div>
+
+  <section class="section"><div class="sec-label">04 · Features</div><h2 class="display">Everything a second brain<br/>should <em>actually</em> do.</h2><div class="features-grid"><div class="feat"><div class="feat-num">01</div><h4>Thread Detection</h4><p>Recurring themes across sources and months.</p></div><div class="feat"><div class="feat-num">02</div><h4>The Sunday Letter</h4><p>Personal reflection every week.</p></div><div class="feat"><div class="feat-num">03</div><h4>Ask Your Archive</h4><p>Synthesize your evolving stance by topic.</p></div></div></section>
+  <section class="section" id="pricing" style="padding-top:0"><div class="sec-label">05 · Pricing</div><h2 class="display">Built for thinkers.<br/>Priced for <em>individuals.</em></h2><div class="pricing-grid"><div class="price-card"><div class="price-tier">Curious</div><div class="price-amount">Free</div><ul class="price-items"><li>30 pieces / month</li><li>3 active threads</li></ul><button class="price-cta">Start free</button></div><div class="price-card featured"><div class="price-tier">Thinker</div><div class="price-amount">$18</div><ul class="price-items"><li>Unlimited ingestion</li><li>Sunday Letter</li><li>Ask Your Archive</li></ul><button class="price-cta">Start thinking deeper</button></div><div class="price-card"><div class="price-tier">Scholar</div><div class="price-amount">$45</div><ul class="price-items"><li>Everything in Thinker</li><li>API access</li></ul><button class="price-cta">For serious thinkers</button></div></div></section>
+  <section class="cta-section"><div class="cta-label">Early Access Open</div><h2 class="cta-h">Start compounding<br/>your <em>thinking.</em></h2><p class="cta-sub">Join the waitlist. The first Sunday Letter that feels like a mirror.</p><div class="waitlist-form"><input class="waitlist-input" type="email" placeholder="your@email.com"/><button class="waitlist-btn">Join waitlist →</button></div></section>
+  <footer><div class="f-logo">Memex</div><div class="f-links"><a href="#" class="f-link">About</a><a href="#" class="f-link">Blog</a><a href="#" class="f-link">Twitter</a><a href="#" class="f-link">Contact</a></div><div class="f-meta">hello@memex.so · memex.so<br/>© 2025 Memex. All rights reserved.</div></footer>
+
+  <script>
+    const nav = document.getElementById("mainNav");
+    window.addEventListener("scroll", () => nav.classList.toggle("scrolled", window.scrollY > 40), { passive: true });
+    (function() {
+      const canvas = document.getElementById("kgCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      let w = 0, h = 0, t = 0;
+      const nodes = [{x:.2,y:.3,r:6,c:"#c4803a"},{x:.45,y:.5,r:8,c:"#c4803a"},{x:.75,y:.25,r:6,c:"#6b88c4"},{x:.62,y:.75,r:5,c:"#52a374"}];
+      const edges = [[0,1],[1,2],[1,3],[0,3],[2,3]];
+      function resize(){const r=canvas.getBoundingClientRect();w=r.width;h=Math.max(480,r.height);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+      function draw(){ctx.clearRect(0,0,w,h);t+=.01;const pts=nodes.map((n,i)=>({x:n.x*w+Math.sin(t+i)*8,y:n.y*h+Math.cos(t*1.2+i)*6,...n}));edges.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(pts[a].x,pts[a].y);ctx.lineTo(pts[b].x,pts[b].y);ctx.strokeStyle="rgba(240,235,224,.15)";ctx.stroke()});pts.forEach((p)=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle="#09080a";ctx.fill();ctx.strokeStyle=p.c;ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,p.r*.45,0,Math.PI*2);ctx.fillStyle=p.c;ctx.fill();});requestAnimationFrame(draw);}
+      window.addEventListener("resize", resize, { passive: true }); resize(); draw();
+    })();
+  </script>
+</body>
+</html>
