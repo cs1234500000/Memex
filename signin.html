@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memex Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #faf8f4;
+      --paper1: #f5f2ec;
+      --ink: #1a1814;
+      --ink3: #7a7469;
+      --border: rgba(26, 24, 20, .13);
+      --sienna: #c06b35;
+      --display: 'Lora', serif;
+      --body: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--paper);
+      font-family: var(--body);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 7vh auto 0;
+      padding: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hd {
+      padding: .9rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper1);
+      font-family: var(--mono);
+      font-size: .54rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink3);
+    }
+
+    .body {
+      padding: 1.2rem 1.1rem 1.4rem;
+    }
+
+    h1 {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: .4rem;
+    }
+
+    p {
+      color: var(--ink3);
+      margin-bottom: 1rem;
+    }
+
+    .field {
+      margin-bottom: .85rem;
+    }
+
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: .56rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .3rem;
+      color: var(--ink3);
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      padding: .72rem;
+      border-radius: 4px;
+      font-size: .9rem;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      padding: .78rem;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--sienna);
+    }
+
+    .status {
+      margin-top: .7rem;
+      font-size: .85rem;
+      color: var(--ink3);
+      min-height: 1.2rem;
+    }
+
+    .links {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    a {
+      color: var(--sienna);
+      text-decoration: none;
+      font-size: .85rem;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div class="hd">Memex Account</div>
+      <div class="body">
+        <h1>Sign in</h1>
+        <p>Enter both your user ID and email to access your Memex workspace.</p>
+        <form id="signinForm">
+          <div class="field">
+            <label for="userId">User ID</label>
+            <input id="userId" required placeholder="e.g. shubao" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" required type="email" placeholder="you@example.com" />
+          </div>
+          <button type="submit">Sign In</button>
+          <div class="status" id="status"></div>
+        </form>
+        <div class="links">
+          <a href="/signup.html">Don't have an account? Sign up</a>
+          <a href="/dashboard.html">Dashboard</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("signinForm");
+    const statusEl = document.getElementById("status");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      statusEl.textContent = "Signing in...";
+      const payload = {
+        userId: document.getElementById("userId").value.trim(),
+        email: document.getElementById("email").value.trim()
+      };
+      if (!payload.userId || !payload.email) {
+        statusEl.textContent = "Please enter both user ID and email.";
+        return;
+      }
+      try {
+        const res = await fetch("/api/news/users/signin", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Sign in failed.");
+        localStorage.setItem("memex_user_id", data.user.userId);
+        statusEl.textContent = "Success. Redirecting...";
+        window.location.href = `/dashboard.html?userId=${encodeURIComponent(data.user.userId)}`;
+      } catch (error) {
+        statusEl.textContent = error.message || "Could not sign in.";
+      }
+    });
+  </script>
+</body>
+
+</html>

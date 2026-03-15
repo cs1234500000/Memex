@@ -1,0 +1,8 @@
+name = "withmemex"
+compatibility_date = "2026-03-13"
+pages_build_output_dir = "."
+
+[[kv_namespaces]]
+binding = "WAITLIST_KV"
+id = "ade5ef0193b348ec9d91700a4bc2dd61"
+

@@ -4,6 +4,11 @@
   "private": true,
   "description": "Memex startup landing page with signup capture endpoint.",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --env-file=.env server.js",
+    "news:run": "node -e \"fetch('http://localhost:3000/api/news/run',{method:'POST'}).then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\"",
+    "news:latest": "node -e \"fetch('http://localhost:3000/api/news/latest').then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\""
+  },
+  "dependencies": {
+    "fastembed": "^2.1.0"
   }
 }
