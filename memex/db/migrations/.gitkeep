@@ -1,0 +1,3 @@
+# Alembic or raw SQL migration files go here.
+# Naming convention: V{version}__{description}.sql
+# Example: V001__initial_schema.sql

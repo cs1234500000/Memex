@@ -1,12 +1,13 @@
 {
-  "name": "memex-landing",
-  "version": "1.0.0",
+  "name": "memex",
+  "version": "2.0.0",
   "private": true,
-  "description": "Memex startup landing page with signup capture endpoint.",
+  "description": "Memex — query-driven research engine. Web layer (web/) + Python backend (memex/).",
   "scripts": {
     "start": "node --env-file=.env server.js",
-    "news:run": "node -e \"fetch('http://localhost:3000/api/news/run',{method:'POST'}).then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\"",
-    "news:latest": "node -e \"fetch('http://localhost:3000/api/news/latest').then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\""
+    "analyze": "node -e \"fetch('http://localhost:8000/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:process.argv[1]})}).then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\" --",
+    "news:run": "node -e \"fetch('http://localhost:8000/api/news/run',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}).then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\"",
+    "news:latest": "node -e \"fetch('http://localhost:8000/api/news/latest').then(r=>r.json()).then(x=>console.log(JSON.stringify(x,null,2)))\""
   },
   "dependencies": {
     "fastembed": "^2.1.0"

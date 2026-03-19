@@ -1,0 +1,2 @@
+# Drop raw text files here (plain .txt, .md, or PDFs).
+# The build pipeline reads from this directory when ingesting the offline corpus.

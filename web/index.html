@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memex — Your Thinking, Compounded</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --paper: #faf8f4;
+      --paper1: #f5f2ec;
+      --paper2: #edeae2;
+      --paper3: #e5e1d7;
+      --ink: #1a1814;
+      --ink2: #3d3a33;
+      --ink3: #7a7469;
+      --ink4: #a09890;
+      --border: rgba(26, 24, 20, .07);
+      --border2: rgba(26, 24, 20, .13);
+      --sienna: #c06b35;
+      --sienna2: #d97c44;
+      --sienna-bg: rgba(192, 107, 53, .07);
+      --teal: #2a8c78;
+      --teal-bg: rgba(42, 140, 120, .07);
+      --rose: #b84848;
+      --display: 'Lora', Georgia, serif;
+      --body: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+      --radius: 3px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      font-weight: 300;
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .65s cubic-bezier(.22, 1, .36, 1), transform .65s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .reveal.vis {
+      opacity: 1;
+      transform: none;
+    }
+
+    .d1 {
+      transition-delay: .07s;
+    }
+
+    .d2 {
+      transition-delay: .14s;
+    }
+
+    .d3 {
+      transition-delay: .21s;
+    }
+
+    .d4 {
+      transition-delay: .28s;
+    }
+
+    .d5 {
+      transition-delay: .35s;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      transition: background .35s, box-shadow .35s;
+    }
+
+    nav.scrolled {
+      background: rgba(250, 248, 244, .94);
+      backdrop-filter: blur(16px) saturate(1.3);
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      font-family: var(--display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -.01em;
+      text-decoration: none;
+    }
+
+    .nav-mark {
+      width: 22px;
+      height: 22px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.25rem;
+    }
+
+    .nav-link {
+      font-family: var(--mono);
+      font-size: .6rem;
+      font-weight: 300;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink3);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .nav-link:hover {
+      color: var(--ink2);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-login {
+      font-family: var(--body);
+      font-size: .76rem;
+      font-weight: 500;
+      letter-spacing: .01em;
+      color: var(--ink2);
+      border: 1px solid var(--border2);
+      text-decoration: none;
+      padding: .42rem .95rem;
+      border-radius: var(--radius);
+      transition: color .2s, border-color .2s, background .2s;
+    }
+
+    .btn-login:hover {
+      color: var(--ink);
+      border-color: rgba(26, 24, 20, .2);
+      background: var(--paper1);
+    }
+
+    .btn-nav {
+      font-family: var(--body);
+      font-size: .78rem;
+      font-weight: 500;
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      padding: .5rem 1.25rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+
+    .btn-nav:hover {
+      background: var(--sienna);
+      transform: translateY(-1px);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border2);
+      padding: 58px 2.5rem 0;
+    }
+
+    .hero-left {
+      width: 100%;
+      max-width: 900px;
+      padding: 3.4rem 0 2.8rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    /* warm ambient behind hero text */
+    .hero-left::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at 50% 22%, rgba(192, 107, 53, .05) 0%, transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-kicker {
+      font-family: var(--mono);
+      font-size: .58rem;
+      font-weight: 300;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      margin-bottom: 1.3rem;
+      justify-content: center;
+    }
+
+    .kicker-dash {
+      width: 18px;
+      height: 1px;
+      background: var(--sienna);
+      flex-shrink: 0;
+    }
+
+    .hero-h {
+      font-family: var(--display);
+      font-size: clamp(3rem, 5.2vw, 5.2rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -.025em;
+      margin-bottom: 1.1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-h em {
+      font-style: italic;
+      color: var(--sienna);
+    }
+
+    .hero-h strong {
+      font-weight: 700;
+    }
+
+    .hero-sub {
+      font-size: .95rem;
+      font-weight: 300;
+      line-height: 1.72;
+      color: var(--ink3);
+      max-width: 560px;
+      margin: 0 auto 1.6rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-sub b {
+      font-weight: 500;
+      color: var(--ink2);
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      font-family: var(--body);
+      font-size: .83rem;
+      font-weight: 500;
+      background: var(--sienna);
+      color: #fff;
+      border: none;
+      padding: .85rem 1.9rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+
+    .btn-primary:hover {
+      background: var(--sienna2);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      font-family: var(--mono);
+      font-size: .58rem;
+      font-weight: 300;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+      color: var(--ink3);
+      background: none;
+      border: 1px solid var(--border2);
+      padding: .85rem 1.4rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+
+    .btn-outline:hover {
+      color: var(--ink2);
+      border-color: var(--border2);
+    }
+
+    /* ── SECTION ── */
+    .section {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 5.5rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: .54rem;
+      font-weight: 300;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .65rem;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 14px;
+      height: 1px;
+      background: var(--sienna);
+    }
+
+    h2 {
+      font-family: var(--display);
+      font-size: clamp(2rem, 3.6vw, 3rem);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -.02em;
+      margin-bottom: 1rem;
+    }
+
+    h2 em {
+      font-style: italic;
+      color: var(--sienna);
+    }
+
+    h2 strong {
+      font-weight: 700;
+    }
+
+    /* ── PROBLEM ── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-top: 2.5rem;
+      align-items: start;
+    }
+
+    .problem-prose {
+      font-size: .96rem;
+      line-height: 1.9;
+      color: var(--ink3);
+    }
+
+    .problem-prose p {
+      margin-bottom: 1.1rem;
+    }
+
+    .problem-prose p:last-child {
+      margin-bottom: 0;
+    }
+
+    .problem-prose strong {
+      font-weight: 500;
+      color: var(--ink2);
+    }
+
+    .problem-prose em {
+      font-style: italic;
+      color: var(--sienna);
+    }
+
+    /* scatter */
+    .scatter {
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(26, 24, 20, .04);
+    }
+
+    .scatter-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .7rem 1.1rem;
+      background: var(--paper1);
+      border-bottom: 1px solid var(--border2);
+      font-family: var(--mono);
+      font-size: .5rem;
+      font-weight: 300;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink4);
+    }
+
+    .scatter-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--sienna);
+      animation: blink 2.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: .5
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .scatter-row {
+      display: grid;
+      grid-template-columns: 1.75rem 1fr auto;
+      gap: .85rem;
+      align-items: center;
+      padding: .82rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      transition: background .18s;
+    }
+
+    .scatter-row:hover {
+      background: var(--paper);
+    }
+
+    .scatter-row:last-child {
+      border-bottom: none;
+      background: rgba(42, 140, 120, .04);
+    }
+
+    .s-ico {
+      font-size: .88rem;
+      line-height: 1;
+    }
+
+    .s-title {
+      font-size: .81rem;
+      color: var(--ink2);
+      line-height: 1.3;
+      margin-bottom: .12rem;
+    }
+
+    .s-meta {
+      font-family: var(--mono);
+      font-size: .49rem;
+      font-weight: 300;
+      letter-spacing: .04em;
+      color: var(--ink4);
+    }
+
+    .s-badge {
+      font-family: var(--mono);
+      font-size: .47rem;
+      font-weight: 300;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      padding: .18rem .42rem;
+      border: 1px solid;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .b-forgotten {
+      color: #a09890;
+      border-color: rgba(160, 152, 144, .35);
+    }
+
+    .b-orphan {
+      color: #8c8479;
+      border-color: rgba(140, 132, 121, .3);
+    }
+
+    .b-lost {
+      color: var(--rose);
+      border-color: rgba(184, 72, 72, .3);
+    }
+
+    .b-surfaced {
+      color: var(--teal);
+      border-color: rgba(42, 140, 120, .35);
+    }
+
+    /* ── HOW — alternating band ── */
+    .how-band {
+      background: var(--paper1);
+      border-top: 1px solid var(--border2);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    .how-inner {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 5.5rem 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      gap: 1.25rem;
+      align-items: start;
+      padding: 1.6rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+      cursor: default;
+    }
+
+    .step:first-child {
+      padding-top: 0;
+    }
+
+    .step:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .step-n {
+      font-family: var(--display);
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--paper3);
+      line-height: 1;
+      padding-top: .05rem;
+      transition: color .3s;
+    }
+
+    .step:hover .step-n {
+      color: var(--sienna);
+    }
+
+    .step h4 {
+      font-family: var(--display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .4rem;
+      line-height: 1.25;
+    }
+
+    .step p {
+      font-size: .81rem;
+      color: var(--ink3);
+      line-height: 1.8;
+    }
+
+    /* thread demo panel */
+    .tdemo {
+      background: #fff;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 20px rgba(26, 24, 20, .05);
+      position: sticky;
+      top: 5rem;
+    }
+
+    .tdemo-hd {
+      padding: .75rem 1.25rem;
+      background: var(--paper1);
+      border-bottom: 1px solid var(--border2);
+      font-family: var(--mono);
+      font-size: .5rem;
+      font-weight: 300;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink4);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .tdemo-hd::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+      flex-shrink: 0;
+    }
+
+    .t-entry {
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      gap: .9rem;
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: background .18s;
+    }
+
+    .t-entry:last-child {
+      border-bottom: none;
+    }
+
+    .t-entry:hover {
+      background: var(--paper);
+    }
+
+    .t-date {
+      font-family: var(--mono);
+      font-size: .49rem;
+      font-weight: 300;
+      color: var(--ink4);
+      line-height: 1.5;
+      padding-top: .1rem;
+    }
+
+    .t-src {
+      font-family: var(--mono);
+      font-size: .49rem;
+      font-weight: 300;
+      letter-spacing: .05em;
+      color: var(--ink4);
+      margin-bottom: .3rem;
+    }
+
+    .t-entry.hl .t-src {
+      color: var(--sienna);
+    }
+
+    .t-q {
+      font-family: var(--display);
+      font-size: .81rem;
+      font-style: italic;
+      color: var(--ink2);
+      line-height: 1.55;
+    }
+
+    .t-entry.hl .t-q {
+      color: var(--ink);
+    }
+
+    .t-note {
+      margin-top: .55rem;
+      padding: .5rem .8rem;
+      background: var(--sienna-bg);
+      border-left: 2px solid var(--sienna);
+      font-size: .74rem;
+      color: var(--ink3);
+      line-height: 1.6;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .t-note-lbl {
+      font-family: var(--mono);
+      font-size: .47rem;
+      font-weight: 300;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      margin-bottom: .2rem;
+    }
+
+    /* ── FEATURES ── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border2);
+      margin-top: 2.5rem;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .feat {
+      background: #fff;
+      padding: 2rem 1.6rem;
+      position: relative;
+      overflow: hidden;
+      transition: background .22s;
+    }
+
+    .feat:hover {
+      background: var(--paper);
+    }
+
+    .feat-stripe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .feat-ico {
+      font-size: 1.2rem;
+      margin-bottom: .85rem;
+    }
+
+    .feat h4 {
+      font-family: var(--display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .45rem;
+    }
+
+    .feat p {
+      font-size: .79rem;
+      color: var(--ink3);
+      line-height: 1.78;
+    }
+
+    /* ── INSIGHT — cream band ── */
+    .ins-band {
+      background: var(--paper1);
+      border-top: 1px solid var(--border2);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    .ins-inner {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 5.5rem 2.5rem;
+    }
+
+    .ins-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 2.5rem;
+    }
+
+    .ins-card {
+      background: #fff;
+      padding: 2.25rem 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: background .22s;
+    }
+
+    .ins-card:hover {
+      background: var(--paper);
+    }
+
+    .ins-n {
+      font-family: var(--display);
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: rgba(26, 24, 20, .05);
+      line-height: 1;
+      margin-bottom: .3rem;
+    }
+
+    .ins-type {
+      font-family: var(--mono);
+      font-size: .52rem;
+      font-weight: 300;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      margin-bottom: .6rem;
+    }
+
+    .ins-card h4 {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .7rem;
+    }
+
+    .ins-example {
+      border-left: 2px solid var(--sienna);
+      padding: .6rem .9rem;
+      margin-bottom: .7rem;
+      background: var(--sienna-bg);
+      font-family: var(--display);
+      font-size: .82rem;
+      font-style: italic;
+      color: var(--ink2);
+      line-height: 1.6;
+    }
+
+    .ins-card p {
+      font-size: .78rem;
+      color: var(--ink3);
+      line-height: 1.75;
+    }
+
+    /* ── PRICING ── */
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+
+    .price-card {
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 1.85rem;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+      transition: transform .25s, box-shadow .25s;
+    }
+
+    .price-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(26, 24, 20, .07);
+    }
+
+    .price-card.featured {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      font-family: var(--mono);
+      font-size: .46rem;
+      font-weight: 300;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      border: 1px solid rgba(192, 107, 53, .4);
+      padding: .18rem .5rem;
+      border-radius: 20px;
+    }
+
+    .p-tier {
+      font-family: var(--mono);
+      font-size: .55rem;
+      font-weight: 300;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--ink4);
+      margin-bottom: .7rem;
+    }
+
+    .price-card.featured .p-tier {
+      color: rgba(250, 248, 244, .45);
+    }
+
+    .p-amt {
+      font-family: var(--display);
+      font-size: 2.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1;
+      margin-bottom: .2rem;
+    }
+
+    .price-card.featured .p-amt {
+      color: var(--paper);
+    }
+
+    .p-period {
+      font-family: var(--mono);
+      font-size: .53rem;
+      font-weight: 300;
+      color: var(--ink4);
+      margin-bottom: 1.4rem;
+    }
+
+    .price-card.featured .p-period {
+      color: rgba(250, 248, 244, .35);
+    }
+
+    .p-items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .58rem;
+    }
+
+    .p-items li {
+      font-size: .81rem;
+      color: var(--ink3);
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+    }
+
+    .p-items li::before {
+      content: '–';
+      flex-shrink: 0;
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--sienna);
+      margin-top: .07rem;
+    }
+
+    .price-card.featured .p-items li {
+      color: rgba(250, 248, 244, .6);
+    }
+
+    .p-cta {
+      width: 100%;
+      margin-top: 1.4rem;
+      padding: .75rem;
+      font-family: var(--body);
+      font-size: .8rem;
+      font-weight: 400;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--ink2);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .p-cta:hover {
+      background: var(--sienna);
+      border-color: var(--sienna);
+      color: #fff;
+    }
+
+    .price-card.featured .p-cta {
+      background: var(--sienna);
+      border-color: var(--sienna);
+      color: #fff;
+    }
+
+    /* ── USE CASES ── */
+    .uc-section {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 5.5rem 2.5rem;
+    }
+
+    .uc-intro-sub {
+      font-size: .92rem;
+      color: var(--ink3);
+      margin-bottom: 2.2rem;
+    }
+
+    .uc-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: stretch;
+      margin-top: 2rem;
+    }
+
+    .uc-row.flip .uc-text {
+      order: 2;
+    }
+
+    .uc-row.flip .uc-panel {
+      order: 1;
+    }
+
+    .uc-text {
+      border: 1px solid var(--border2);
+      background: #fff;
+      padding: 1.6rem;
+      border-radius: var(--radius);
+    }
+
+    .uc-tag {
+      font-family: var(--mono);
+      font-size: .54rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--sienna);
+      margin-bottom: .75rem;
+    }
+
+    .uc-scenario {
+      font-size: .86rem;
+      color: var(--ink3);
+      line-height: 1.85;
+    }
+
+    .uc-scenario b {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .uc-panel {
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .utp {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .utp-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .8rem;
+      padding: .75rem .95rem;
+      border-bottom: 1px solid var(--border2);
+      background: var(--paper1);
+    }
+
+    .utp-bar-l {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-family: var(--mono);
+      font-size: .5rem;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--ink3);
+    }
+
+    .utp-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--sienna);
+    }
+
+    .utp-count {
+      font-family: var(--mono);
+      font-size: .48rem;
+      color: var(--ink4);
+    }
+
+    .utp-entry {
+      display: grid;
+      grid-template-columns: 1.85rem 1fr;
+      gap: .65rem;
+      padding: .8rem .95rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .utp-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: .1rem;
+    }
+
+    .utp-node {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--paper3);
+      background: #fff;
+    }
+
+    .utp-vline {
+      width: 1px;
+      flex: 1;
+      min-height: 1.05rem;
+      margin-top: .25rem;
+      background: var(--border2);
+    }
+
+    .utp-entry:last-of-type .utp-vline {
+      opacity: 0;
+    }
+
+    .utp-entry.hl .utp-node {
+      background: var(--sienna);
+      border-color: var(--sienna);
+    }
+
+    .utp-entry.synth .utp-node {
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .utp-entry.warn .utp-node {
+      background: var(--rose);
+      border-color: var(--rose);
+    }
+
+    .utp-src {
+      font-family: var(--mono);
+      font-size: .48rem;
+      letter-spacing: .05em;
+      color: var(--ink4);
+      margin-bottom: .2rem;
+    }
+
+    .utp-q {
+      font-family: var(--display);
+      font-size: .76rem;
+      color: var(--ink2);
+      line-height: 1.55;
+    }
+
+    .utp-badge {
+      margin-top: .45rem;
+      display: inline-flex;
+      align-items: center;
+      padding: .14rem .45rem;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      font-family: var(--mono);
+      font-size: .45rem;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .utp-badge.green {
+      color: var(--teal);
+      border-color: rgba(42, 140, 120, .35);
+      background: rgba(42, 140, 120, .06);
+    }
+
+    .utp-badge.red {
+      color: var(--rose);
+      border-color: rgba(184, 72, 72, .35);
+      background: rgba(184, 72, 72, .06);
+    }
+
+    .utp-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .62rem .95rem;
+      background: var(--paper1);
+      font-family: var(--mono);
+      font-size: .47rem;
+      color: var(--ink4);
+    }
+
+    .utp-footer-btn {
+      border: none;
+      background: none;
+      color: var(--sienna);
+      font-family: var(--mono);
+      font-size: .47rem;
+      letter-spacing: .07em;
+      cursor: pointer;
+    }
+
+    .utp-footer-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* ── MOAT ── */
+    .moat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-top: 2.5rem;
+      align-items: start;
+    }
+
+    .moat-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .moat-item {
+      display: grid;
+      grid-template-columns: 2.25rem 1fr;
+      gap: 1.1rem;
+      align-items: start;
+      padding: 1.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .moat-item:first-child {
+      padding-top: 0;
+    }
+
+    .moat-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .moat-n {
+      width: 1.85rem;
+      height: 1.85rem;
+      border-radius: 50%;
+      background: var(--sienna);
+      color: #fff;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: .52rem;
+      font-weight: 400;
+      margin-top: .1rem;
+    }
+
+    .moat-body h4 {
+      font-family: var(--display);
+      font-size: .98rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: .38rem;
+    }
+
+    .moat-body p {
+      font-size: .81rem;
+      color: var(--ink3);
+      line-height: 1.8;
+    }
+
+    .tech-card {
+      background: var(--paper1);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 1.85rem;
+      position: sticky;
+      top: 5rem;
+    }
+
+    .tc-hd {
+      font-family: var(--mono);
+      font-size: .52rem;
+      font-weight: 300;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink4);
+      padding-bottom: .85rem;
+      border-bottom: 1px solid var(--border2);
+      margin-bottom: 1.4rem;
+    }
+
+    .tc-items {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .tc-name {
+      font-family: var(--mono);
+      font-size: .6rem;
+      font-weight: 400;
+      color: var(--sienna);
+      margin-bottom: .28rem;
+    }
+
+    .tc-desc {
+      font-size: .79rem;
+      color: var(--ink3);
+      line-height: 1.75;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--ink);
+      padding: 2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .f-logo {
+      font-family: var(--display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--paper);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .f-meta {
+      font-family: var(--mono);
+      font-size: .5rem;
+      font-weight: 300;
+      letter-spacing: .07em;
+      color: rgba(250, 248, 244, .3);
+      line-height: 2;
+      text-align: right;
+    }
+
+    /* ── WAITLIST PANEL (non-invasive UX) ── */
+    .waitlist-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 290;
+      background: rgba(26, 24, 20, .35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    .waitlist-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .waitlist-panel {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 300;
+      width: min(420px, calc(100vw - 2rem));
+      background: rgba(250, 248, 244, .97);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 30px rgba(26, 24, 20, .15);
+      padding: .95rem;
+      transform: translate(-50%, -46%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .waitlist-panel.open {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+    }
+
+    .wl-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: .6rem;
+    }
+
+    .wl-title {
+      font-family: var(--mono);
+      font-size: .52rem;
+      font-weight: 300;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink3);
+    }
+
+    .wl-close {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--ink4);
+      font-family: var(--mono);
+      font-size: .85rem;
+      line-height: 1;
+    }
+
+    .wl-form {
+      display: flex;
+      gap: .45rem;
+    }
+
+    .wl-input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink2);
+      padding: .62rem .7rem;
+      font-family: var(--body);
+      font-size: .83rem;
+      font-weight: 400;
+    }
+
+    .wl-input:focus {
+      outline: none;
+      border-color: rgba(192, 107, 53, .45);
+    }
+
+    .wl-submit {
+      border: none;
+      background: var(--sienna);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: .62rem .8rem;
+      font-family: var(--body);
+      font-size: .8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .wl-submit:hover {
+      background: var(--sienna2);
+    }
+
+    .wl-status {
+      margin-top: .45rem;
+      min-height: 1.1rem;
+      font-family: var(--mono);
+      font-size: .5rem;
+      font-weight: 300;
+      letter-spacing: .04em;
+      color: var(--ink3);
+    }
+
+    .wl-status.error {
+      color: var(--rose);
+    }
+
+    .wl-status.success {
+      color: var(--teal);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:960px) {
+      .hero {
+        padding: 58px 1.5rem 0;
+      }
+
+      .hero-left {
+        padding: 3rem 0 2.4rem;
+      }
+
+      .problem-grid,
+      .how-inner,
+      .ins-grid,
+      .moat-grid,
+      .uc-row {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      .feat-grid,
+      .price-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      nav {
+        padding: 0 1.5rem;
+      }
+
+      .section,
+      .how-inner,
+      .ins-inner,
+      .uc-section {
+        padding: 4rem 1.5rem;
+      }
+
+      .uc-row.flip .uc-text,
+      .uc-row.flip .uc-panel {
+        order: initial;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .f-meta {
+        text-align: center;
+      }
+
+      .waitlist-panel {
+        width: calc(100vw - 1.5rem);
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a class="nav-logo" href="#">
+      <img class="nav-mark" src="memex-mark.svg" alt="Memex mark" />
+      Memex
+    </a>
+    <div class="nav-links">
+      <a href="#problem" class="nav-link">Problem</a>
+      <a href="#how" class="nav-link">Who it's for</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="/dashboard.html" class="nav-link">Demo</a>
+    </div>
+    <div class="nav-right">
+      <a href="/signin.html" class="btn-login">Log in</a>
+      <button class="btn-nav">Join waitlist</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div>
+        <div class="hero-kicker reveal">
+          <span class="kicker-dash"></span>
+          The Compounding Second Brain
+          <span class="kicker-dash"></span>
+        </div>
+        <h1 class="hero-h reveal d1">
+          Your ideas don't die.<br />
+          They <em>connect.</em><br />
+          They <strong>compound.</strong>
+        </h1>
+        <p class="hero-sub reveal d2">
+          Memex turns everything you consume into a <b>living map of your mind</b>.
+          It surfaces the threads, remembers what matters, and compounds your thinking over time.
+        </p>
+        <div class="hero-actions reveal d3">
+          <button class="btn-primary">Start your second brain →</button>
+          <button class="btn-outline">How it works</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROBLEM -->
+  <section class="section" id="problem">
+    <div class="eyebrow reveal">01 · The Problem</div>
+    <h2 class="reveal d1">You consume constantly.<br />Almost <em>none of it sticks.</em></h2>
+
+    <div class="problem-grid">
+      <div class="problem-prose reveal d2">
+        <p>The average knowledge worker reads 5 articles a day, listens to 3 hours of podcasts a week, watches countless
+          YouTube videos, saves hundreds of highlights. And then <strong>remembers almost none of it.</strong></p>
+        <p>It's not a memory problem. It's a <em>connection problem.</em> Your brain builds understanding through
+          associations — when a new idea links to something you already know, it becomes <strong>real knowledge</strong>
+          instead of a fading impression.</p>
+        <p>But your tools treat every piece of content as an island. Readwise saves highlights in a flat list. Notion is
+          a graveyard of half-finished notes. Pocket has 847 unread articles. <strong>Nothing watches across time.
+            Nothing connects the dots.</strong></p>
+        <p>The result: you're on a treadmill of consumption that feels productive but generates almost zero compounding
+          intellectual value. <em>That ends with Memex.</em></p>
+      </div>
+
+      <div class="reveal d3">
+        <div class="scatter">
+          <div class="scatter-hd">
+            A typical week's intake — fate unknown
+            <div class="scatter-dot"></div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">🎧</div>
+            <div>
+              <div class="s-title">Lex Fridman · Sam Altman Episode</div>
+              <div class="s-meta">3h 12min · listened 80% · Mon</div>
+            </div>
+            <div class="s-badge b-forgotten">forgotten</div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">📄</div>
+            <div>
+              <div class="s-title">"Why Founders Fail at Scaling" — a16z</div>
+              <div class="s-meta">12 min read · 3 highlights · Tue</div>
+            </div>
+            <div class="s-badge b-orphan">orphaned</div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">📺</div>
+            <div>
+              <div class="s-title">Naval · How to Get Rich (full)</div>
+              <div class="s-meta">2h 10min · watched fully · Wed</div>
+            </div>
+            <div class="s-badge b-forgotten">fading</div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">📄</div>
+            <div>
+              <div class="s-title">The Compounding Effect of Reading — FS</div>
+              <div class="s-meta">8 min read · bookmarked · Thu</div>
+            </div>
+            <div class="s-badge b-lost">never opened</div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">🎧</div>
+            <div>
+              <div class="s-title">Tim Ferriss · Adam Grant Interview</div>
+              <div class="s-meta">1h 45min · partial · Fri</div>
+            </div>
+            <div class="s-badge b-orphan">orphaned</div>
+          </div>
+          <div class="scatter-row">
+            <div class="s-ico">✦</div>
+            <div>
+              <div class="s-title" style="color:var(--teal);font-weight:500">Memex: All five connect to one thread</div>
+              <div class="s-meta" style="color:rgba(42,140,120,.7)">"Non-linear returns on deliberate learning"</div>
+            </div>
+            <div class="s-badge b-surfaced">surfaced</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" style="border-bottom:1px solid var(--border)">
+    <div class="uc-section">
+      <div class="eyebrow reveal">02 · Who it's for</div>
+      <h2 class="reveal d1">Built for people who<br />think for a <em>living.</em></h2>
+      <p class="uc-intro-sub reveal d2">Three very different workflows. One compounding second brain.</p>
+
+      <!-- Row 1: AI Founders — text left, panel right -->
+      <div class="uc-row reveal">
+        <div class="uc-text">
+          <div class="uc-tag">AI Founders</div>
+          <p class="uc-scenario">
+            You follow @karpathy, @sama, @ylecun on X. You skim r/MachineLearning and r/LocalLLaMA every morning. You
+            read every a16z AI piece and every YC batch announcement. In January, Karpathy tweeted about inference-time
+            compute. In February, a Reddit thread broke down why it changes model economics. In March, a16z published a
+            full thesis. In April, five YC S25 companies shipped directly into this space.
+            <br /><br />
+            <b>You read all of it. You never saw it as one story. Memex did - and told you four months ago.</b>
+          </p>
+        </div>
+        <div class="uc-panel">
+          <div class="utp">
+            <div class="utp-bar">
+              <div class="utp-bar-l">
+                <div class="utp-dot"></div>Thread · Inference-time compute
+              </div>
+              <div class="utp-count">5 sources</div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">X @karpathy · Jan 14</div>
+                <div class="utp-q">"Scaling inference compute at test-time is the next unlock..."</div>
+              </div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Reddit · r/LocalLLaMA · Feb 3</div>
+                <div class="utp-q">"Why inference cost curves matter more than training now"</div>
+              </div>
+            </div>
+            <div class="utp-entry hl">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">a16z · Mar 18</div>
+                <div class="utp-q">"The case for inference-time scaling - full thesis"</div>
+              </div>
+            </div>
+            <div class="utp-entry hl">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">YC S25 batch announcements · Apr 2</div>
+                <div class="utp-q">5 companies building directly on inference-time compute</div>
+              </div>
+            </div>
+            <div class="utp-entry synth">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">✦ Memex synthesis</div>
+                <div class="utp-q">$140M in seed funding now validates the thesis you've been tracking since January.
+                </div>
+                <div class="utp-badge green">4 months · 5 sources · market confirmed</div>
+              </div>
+            </div>
+            <div class="utp-footer">
+              <span>147 active threads</span>
+              <button class="utp-footer-btn">View thread →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Researchers — panel left, text right -->
+      <div class="uc-row flip reveal">
+        <div class="uc-text">
+          <div class="uc-tag">Researchers</div>
+          <p class="uc-scenario">
+            You have ArXiv alerts for three topics, ACL Anthology bookmarks going back two years, and a Semantic Scholar
+            reading list you haven't opened since October. Last Tuesday a new paper dropped on predictive coding. It
+            directly built on a Friston preprint you annotated fourteen months ago - and quietly contradicted a Clark
+            finding you'd flagged as uncertain.
+            <br /><br />
+            <b>You would have cited them as agreeing. Memex caught the conflict before you wrote a word.</b>
+          </p>
+        </div>
+        <div class="uc-panel">
+          <div class="utp">
+            <div class="utp-bar">
+              <div class="utp-bar-l">
+                <div class="utp-dot"></div>Thread · Predictive coding models
+              </div>
+              <div class="utp-count">23 papers</div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">ArXiv preprint · Friston et al. · Oct 2023</div>
+                <div class="utp-q">"Active inference under the free energy principle" - annotated</div>
+              </div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">ACL Anthology · Clark &amp; Manning · 2024</div>
+                <div class="utp-q">"Hierarchical prediction in language models" - flagged as uncertain</div>
+              </div>
+            </div>
+            <div class="utp-entry hl">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Nature Neuroscience · Dec 17 · new paper</div>
+                <div class="utp-q">"Revisiting predictive coding: a unified account"</div>
+              </div>
+            </div>
+            <div class="utp-entry warn">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Conflict detected</div>
+                <div class="utp-q">Nature (Dec) builds on Friston but contradicts Clark. Your belief on this is
+                  contested.</div>
+                <div class="utp-badge red">2 sources in conflict · review before citing</div>
+              </div>
+            </div>
+            <div class="utp-footer">
+              <span>23 papers in thread</span>
+              <button class="utp-footer-btn">Resolve conflict →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Investors — text left, panel right -->
+      <div class="uc-row reveal">
+        <div class="uc-text">
+          <div class="uc-tag">Investors</div>
+          <p class="uc-scenario">
+            You built your TSMC position reading Bloomberg Terminal reports, two Stratechery deep-dives, an Odd Lots
+            podcast on semiconductor geopolitics, and a chip analyst thread on X. That was eight months ago. Last week a
+            Taiwan Strait headline moved your position 12%.
+            <br /><br />
+            <b>Memex had the full thread intact: six assumptions, sources for each, and two already under pressure
+              before the headline hit.</b>
+          </p>
+        </div>
+        <div class="uc-panel">
+          <div class="utp">
+            <div class="utp-bar">
+              <div class="utp-bar-l">
+                <div class="utp-dot"></div>Thread · TSMC investment thesis
+              </div>
+              <div class="utp-count">6 assumptions</div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Bloomberg Terminal · Apr 2024</div>
+                <div class="utp-q">"TSMC's 3nm yield rate reaches production threshold"</div>
+              </div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Stratechery · Ben Thompson · Jun</div>
+                <div class="utp-q">"The geopolitics of semiconductor supply chains"</div>
+              </div>
+            </div>
+            <div class="utp-entry">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">Odd Lots · Bloomberg podcast · Jul 8</div>
+                <div class="utp-q">"Taiwan risk premium in chip stocks is deeply underpriced"</div>
+              </div>
+            </div>
+            <div class="utp-entry warn">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">2 of 6 assumptions under pressure</div>
+                <div class="utp-q">Taiwan Strait tension headline · Today - geopolitical stability + supply continuity
+                  now contested.</div>
+                <div class="utp-badge red">review thesis · position moved -12%</div>
+              </div>
+            </div>
+            <div class="utp-entry synth">
+              <div class="utp-col">
+                <div class="utp-node"></div>
+                <div class="utp-vline"></div>
+              </div>
+              <div>
+                <div class="utp-src">✦ Memex synthesis</div>
+                <div class="utp-q">Your original thesis and all six sources are intact. Here's what's changed.</div>
+              </div>
+            </div>
+            <div class="utp-footer">
+              <span>Built over 8 months</span>
+              <button class="utp-footer-btn">Review thesis →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="eyebrow reveal">03 · Features</div>
+    <h2 class="reveal d1">Everything a second brain<br />should <em>actually</em> do.</h2>
+
+    <div class="feat-grid">
+      <div class="feat reveal">
+        <div class="feat-stripe" style="background:var(--sienna)"></div>
+        <div class="feat-ico">🧵</div>
+        <h4>Thread Detection</h4>
+        <p>Automatically identifies recurring themes across all your content — even when the words are completely
+          different — and surfaces them as living threads you can explore and annotate.</p>
+      </div>
+      <div class="feat reveal d1">
+        <div class="feat-stripe" style="background:var(--teal)"></div>
+        <div class="feat-ico">⚡</div>
+        <h4>Contradiction Alerts</h4>
+        <p>When a new idea meaningfully contradicts something you've previously bookmarked or believed, Memex flags it
+          immediately. Cognitive dissonance is where real thinking happens.</p>
+      </div>
+      <div class="feat reveal d2">
+        <div class="feat-stripe" style="background:#7a5ef5"></div>
+        <div class="feat-ico">📬</div>
+        <h4>The Sunday Letter</h4>
+        <p>Every week, Memex writes you a personal letter — what your mind consumed, what threads are emerging, what
+          beliefs are crystallizing. A mirror of your intellectual week.</p>
+      </div>
+      <div class="feat reveal d1">
+        <div class="feat-stripe" style="background:var(--rose)"></div>
+        <div class="feat-ico">🎙️</div>
+        <h4>Voice Captures</h4>
+        <p>Had a thought in the shower? Record 30 seconds on your phone. Memex transcribes, indexes, and connects it to
+          your existing threads — your spoken ideas are first-class citizens.</p>
+      </div>
+      <div class="feat reveal d2">
+        <div class="feat-stripe" style="background:var(--ink3)"></div>
+        <div class="feat-ico">📊</div>
+        <h4>Belief Graph</h4>
+        <p>A visual map of your intellectual landscape — which ideas are well-supported, which are lonely hypotheses,
+          which are battle-tested by dozens of sources. See your mind from the outside.</p>
+      </div>
+      <div class="feat reveal d3">
+        <div class="feat-stripe" style="background:var(--sienna)"></div>
+        <div class="feat-ico">💬</div>
+        <h4>Ask Your Archive</h4>
+        <p>"What do I actually think about remote work?" Memex searches not just for saved quotes, but for your evolving
+          stance — synthesizing across every source you've consumed on the topic.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGHT TYPES -->
+  <div class="ins-band">
+    <div class="ins-inner">
+      <div class="eyebrow reveal">04 · Insight Types</div>
+      <h2 class="reveal d1">Four kinds of insight<br />Memex surfaces for you.</h2>
+
+      <div class="ins-grid">
+        <div class="ins-card reveal">
+          <div class="ins-n">01</div>
+          <div class="ins-type">Convergence</div>
+          <h4>Multiple sources, one truth</h4>
+          <div class="ins-example">"You've encountered 'deliberate practice' in 8 different sources over 6 months — from
+            Ericsson's research to a Tim Ferriss podcast to a YC essay. This is a well-supported belief now."</div>
+          <p>When enough independent sources converge on an idea, Memex promotes it from "interesting thing I read" to a
+            genuine conviction in your belief graph.</p>
+        </div>
+        <div class="ins-card reveal d1">
+          <div class="ins-n">02</div>
+          <div class="ins-type">Contradiction</div>
+          <h4>Your assumptions, challenged</h4>
+          <div class="ins-example">"In January you saved an article arguing founders should specialize early. This
+            podcast argues the opposite with equal rigor. Your belief is now actively contested."</div>
+          <p>Memex surfaces intellectual tension before you forget one of the sources. These are the moments worth
+            resolving.</p>
+        </div>
+        <div class="ins-card reveal d1">
+          <div class="ins-n">03</div>
+          <div class="ins-type">Obsession Detection</div>
+          <h4>What your mind keeps returning to</h4>
+          <div class="ins-example">"You've consumed 14 pieces touching on 'decision-making under uncertainty' in 3
+            months. You haven't written anything about it. Is there something here you're trying to figure out?"</div>
+          <p>What you repeatedly seek out reveals what you're actually trying to solve. Memex names the unnamed
+            questions driving your consumption.</p>
+        </div>
+        <div class="ins-card reveal d2">
+          <div class="ins-n">04</div>
+          <div class="ins-type">Connection Across Time</div>
+          <h4>Past you, meet present you</h4>
+          <div class="ins-example">"A note you wrote 8 months ago: 'I don't understand why great teams fall apart.'
+            You've now consumed 11 sources that together probably answer this."</div>
+          <p>Your old unanswered questions deserve answers. Memex tracks what you were puzzled about and tells you when
+            you've finally gathered enough to understand it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing">
+    <div class="eyebrow reveal">05 · Pricing</div>
+    <h2 class="reveal d1">Built for thinkers.<br />Priced for <em>individuals.</em></h2>
+
+    <div class="price-grid">
+      <div class="price-card reveal">
+        <div class="p-tier">Curious</div>
+        <div class="p-amt">Free</div>
+        <div class="p-period">Forever · no credit card</div>
+        <ul class="p-items">
+          <li>50 pieces of content / month</li>
+          <li>Thread detection (up to 5 threads)</li>
+          <li>7-day connection window</li>
+          <li>Browser extension</li>
+          <li>Basic weekly digest</li>
+        </ul>
+        <button class="p-cta">Start free</button>
+      </div>
+      <div class="price-card featured reveal d1">
+        <div class="featured-badge">Most Popular</div>
+        <div class="p-tier">Thinker</div>
+        <div class="p-amt">$18</div>
+        <div class="p-period">per month · billed annually</div>
+        <ul class="p-items">
+          <li>Unlimited content ingestion</li>
+          <li>Unlimited threads, no decay</li>
+          <li>Full connection history</li>
+          <li>Podcast auto-sync + YouTube</li>
+          <li>The Sunday Letter</li>
+          <li>Voice captures</li>
+          <li>Belief graph visualization</li>
+          <li>Ask Your Archive</li>
+        </ul>
+        <button class="p-cta">Start thinking deeper</button>
+      </div>
+      <div class="price-card reveal d2">
+        <div class="p-tier">Scholar</div>
+        <div class="p-amt">$45</div>
+        <div class="p-period">per month · researchers &amp; writers</div>
+        <ul class="p-items">
+          <li>Everything in Thinker</li>
+          <li>Collaborative threads</li>
+          <li>Export to Obsidian / Notion / Roam</li>
+          <li>Citation graph for academic work</li>
+          <li>API access</li>
+          <li>Priority synthesis</li>
+        </ul>
+        <button class="p-cta">For serious thinkers</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="f-logo">
+      <img class="nav-mark" src="memex-mark.svg" alt="Memex mark" />
+      Memex
+    </div>
+    <div class="f-meta">
+      Powered by VectraFlow · Brown University<br />
+      hello@withmemex.com · withmemex.com
+    </div>
+  </footer>
+
+  <div class="waitlist-backdrop" id="waitlistBackdrop"></div>
+  <div class="waitlist-panel" id="waitlistPanel" aria-hidden="true">
+    <div class="wl-head">
+      <div class="wl-title">Join Waitlist</div>
+      <button class="wl-close" id="waitlistClose" aria-label="Close">×</button>
+    </div>
+    <form class="wl-form" id="waitlistForm">
+      <input class="wl-input" id="waitlistEmail" type="email" placeholder="you@company.com" required />
+      <button class="wl-submit" type="submit">Join</button>
+    </form>
+    <div class="wl-status" id="waitlistStatus" aria-live="polite"></div>
+  </div>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+  <script>
+    /* nav scroll */
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 40), { passive: true });
+
+    /* scroll reveal */
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+    }, { threshold: .1, rootMargin: '0px 0px -36px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    /* waitlist signup -> backend */
+    async function submitWaitlist(email) {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, interest: 'waitlist' })
+      });
+      let payload = {};
+      try { payload = await res.json(); } catch { }
+      if (!res.ok) throw new Error(payload.error || 'Signup failed');
+      return payload;
+    }
+
+    const navWaitlistBtn = document.querySelector('.btn-nav');
+    const waitlistPanel = document.getElementById('waitlistPanel');
+    const waitlistBackdrop = document.getElementById('waitlistBackdrop');
+    const waitlistForm = document.getElementById('waitlistForm');
+    const waitlistEmail = document.getElementById('waitlistEmail');
+    const waitlistStatus = document.getElementById('waitlistStatus');
+    const waitlistClose = document.getElementById('waitlistClose');
+
+    function openWaitlistPanel() {
+      if (!waitlistPanel) return;
+      waitlistBackdrop?.classList.add('open');
+      waitlistPanel.classList.add('open');
+      waitlistPanel.setAttribute('aria-hidden', 'false');
+      waitlistEmail?.focus();
+    }
+    function closeWaitlistPanel() {
+      if (!waitlistPanel) return;
+      waitlistBackdrop?.classList.remove('open');
+      waitlistPanel.classList.remove('open');
+      waitlistPanel.setAttribute('aria-hidden', 'true');
+    }
+
+    if (navWaitlistBtn) {
+      navWaitlistBtn.addEventListener('click', openWaitlistPanel);
+    }
+    if (waitlistClose) {
+      waitlistClose.addEventListener('click', closeWaitlistPanel);
+    }
+    if (waitlistBackdrop) {
+      waitlistBackdrop.addEventListener('click', closeWaitlistPanel);
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeWaitlistPanel();
+    });
+    if (waitlistForm) {
+      waitlistForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (waitlistEmail?.value || '').trim();
+        if (!email) return;
+        waitlistStatus.className = 'wl-status';
+        waitlistStatus.textContent = 'Joining...';
+        try {
+          await submitWaitlist(email);
+          waitlistStatus.className = 'wl-status success';
+          waitlistStatus.textContent = 'You are on the waitlist.';
+          waitlistForm.reset();
+        } catch (err) {
+          waitlistStatus.className = 'wl-status error';
+          waitlistStatus.textContent = err.message || 'Could not join waitlist.';
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
