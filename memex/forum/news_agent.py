@@ -3,9 +3,10 @@ agents/news_agent.py
 NewsAgent — monitors breaking news, press releases, and mainstream media.
 
 Sources (in priority order):
-  1. NewsAPI.org     — broad article search, past 30 days
-  2. RSS feeds       — Reuters, AP, BBC, FT (real-time wire copy)
-  3. Jina Reader     — full-text fetch for top articles
+  1. NewsAPI.org      — broad article search, past 30 days
+  2. RSS feeds        — Reuters, AP, BBC, FT (real-time wire copy)
+  3. Jina Reader      — full-text fetch for top articles
+  4. WebCrawlerClient — Tavily web search for uncovered URLs (top 10, news topic)
 
 Strengths: facts, timelines, official narratives.
 Known bias: recency bias; favours official sources; corporate PR can slip through.
@@ -24,6 +25,7 @@ from memex.forum.decomposer import NewsQuery
 from memex.sources.newsapi import NewsAPIClient
 from memex.sources.rss import RSSClient
 from memex.sources.jina import JinaClient
+from memex.sources.webcrawler import WebCrawlerClient
 from memex.ingest.enricher import is_fetchable
 
 RSS_FEEDS = {
@@ -40,7 +42,8 @@ class NewsAgent(BaseAgent):
     caveats_text = (
         "Prone to recency bias and official narratives. Corporate press releases "
         "and government statements may be over-represented. RSS wire copy may lack "
-        "depth; Jina-fetched full text may hit paywalls."
+        "depth; Jina-fetched full text may hit paywalls. Web crawler results depend "
+        "on TAVILY_API_KEY being set."
     )
 
     def __init__(self, client: AsyncOpenAI, model: str = EXPERT_MODEL):
@@ -48,6 +51,7 @@ class NewsAgent(BaseAgent):
         self.newsapi = NewsAPIClient(api_key=os.environ.get("NEWSAPI_KEY") or os.environ.get("NEWSAPI_API_KEY", ""))
         self.rss = RSSClient()
         self.jina = JinaClient()
+        self.webcrawler = WebCrawlerClient()
 
     async def run_decomposed(self, query: NewsQuery) -> AgentReport:
         items = await self._fetch_with_context(
@@ -67,10 +71,11 @@ class NewsAgent(BaseAgent):
         return await self._fetch_with_context(search=sub_query, days_back=14)
 
     async def _fetch_with_context(self, search: str, days_back: int = 14) -> list[ContentItem]:
-        # 1. Parallel fetch from NewsAPI and RSS
-        newsapi_results, rss_results = await asyncio.gather(
+        # 1. Parallel fetch from NewsAPI, RSS, and WebCrawler
+        newsapi_results, rss_results, crawler_results = await asyncio.gather(
             self.newsapi.search(search, page_size=10, days_back=days_back),
             self.rss.search(search, feeds=RSS_FEEDS, limit_per_feed=5),
+            self.webcrawler.search(search, top_n=10, topic="news"),
             return_exceptions=True,
         )
 
@@ -79,6 +84,12 @@ class NewsAgent(BaseAgent):
             raw_articles.extend(newsapi_results)
         if not isinstance(rss_results, Exception):
             raw_articles.extend(rss_results)
+        if not isinstance(crawler_results, Exception):
+            # webcrawler items already have full text in 'text'; normalise to
+            # the 'description' key so the enrichment step below picks it up
+            for item in crawler_results:
+                item.setdefault("description", item.get("text", ""))
+            raw_articles.extend(crawler_results)
 
         # 2. Enrich top 6 fetchable articles with Jina Reader
         fetchable = [a for a in raw_articles if is_fetchable(a.get("url", ""))[0]]

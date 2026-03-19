@@ -24,5 +24,8 @@ weasyprint>=62.0    # optional: PDF export
 # Set NEWS_USE_LOCAL_EMBEDDINGS=false to skip this dependency
 sentence-transformers>=3.0.0
 
+# Web search + full-text extraction (webcrawler source)
+tavily-python>=0.7.0
+
 # Utilities
 python-dotenv>=1.0.0

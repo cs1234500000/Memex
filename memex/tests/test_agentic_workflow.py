@@ -22,11 +22,17 @@ Host:       memex/forum/engine.py  →  class Debate
             Debate owns the decomposer and all 5 agents.
             base_agent.py is the shared abstract base class only.
 
-Run:
-    # From project root, with .env loaded:
-    python -m pytest memex/tests/test_agentic_workflow.py -s -v
+Modular phase tests (run individually):
+    pytest memex/tests/test_phase1_decomposer.py -s -v   # decomposition only
+    pytest memex/tests/test_phase2_agents.py     -s -v   # individual agents
 
-    # Or directly:
+Run the full orchestrated pipeline:
+    pytest memex/tests/test_agentic_workflow.py  -s -v
+
+Run all phases together:
+    pytest memex/tests/ -s -v
+
+Or directly:
     python memex/tests/test_agentic_workflow.py
 
 Notes:
@@ -57,295 +63,144 @@ load_dotenv(_ROOT / ".env")
 # ── imports ───────────────────────────────────────────────────────────────────
 from openai import AsyncOpenAI
 
-from memex.forum.decomposer import QueryDecomposer, DecomposedQuery
-from memex.forum.news_agent import NewsAgent
-from memex.forum.social_agent import SocialAgent
-from memex.forum.expert_agent import ExpertAgent
-from memex.forum.knowledge_agent import KnowledgeAgent
-from memex.forum.market_agent import MarketAgent
 from memex.forum.engine import Debate, DebateReport
-from memex.forum.base_agent import AgentReport, ContentItem
-
-
-# ── test query ────────────────────────────────────────────────────────────────
-TEST_QUERY = (
-    "What is OpenClaw's effect on the AI agents ecosystem? "
-    "Analyze its advantages and disadvantages for developers and incumbents."
+from memex.tests.conftest import (
+    TEST_QUERY,
+    section,
+    subsection,
+    wrap,
+    print_env_status,
+    print_agent_report,
 )
 
-# ── Agent → required env var mapping (for diagnostics) ───────────────────────
 
-_AGENT_KEYS: dict[str, list[str]] = {
-    "NewsAgent":      ["NEWSAPI_KEY", "JINA_API_KEY"],
-    "SocialAgent":    ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET", "REDDIT_USER_AGENT"],
-    "ExpertAgent":    ["JINA_API_KEY"],
-    "KnowledgeAgent": ["POSTGRES_DSN"],
-    "MarketAgent":    [],   # fully public APIs — no key needed
-}
+# ── debate-specific helpers ───────────────────────────────────────────────────
+
+def _conf_bar(pct: int, width: int = 20) -> str:
+    """Render a compact Unicode block bar for a confidence percentage."""
+    filled = round(pct / 100 * width)
+    return "█" * filled + "░" * (width - filled)
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
-
-def _hr(char: str = "─", width: int = 72) -> str:
-    return char * width
-
-
-def _section(title: str) -> None:
-    print(f"\n{_hr('═')}")
-    print(f"  {title}")
-    print(_hr('═'))
-
-
-def _subsection(title: str) -> None:
-    print(f"\n{_hr('─')}")
-    print(f"  {title}")
-    print(_hr('─'))
-
-
-def _wrap(text: str, indent: int = 4) -> str:
+def _bullets(items: list[str], indent: int = 6, marker: str = "•") -> None:
+    """Print a bullet list, each item text-wrapped at 88 chars."""
     prefix = " " * indent
-    return textwrap.fill(text, width=88, initial_indent=prefix, subsequent_indent=prefix)
+    for item in items:
+        lines = textwrap.wrap(item, width=88 - indent - 2)
+        if not lines:
+            continue
+        print(f"{prefix}{marker} {lines[0]}")
+        for cont in lines[1:]:
+            print(f"{prefix}  {cont}")
 
 
-def _print_env_status() -> None:
-    """Show which API keys are configured before running agents."""
-    _section("PRE-FLIGHT · API KEY STATUS")
-    all_keys = {
-        "OPENAI_API_KEY":          "OpenAI (required)",
-        "NEWSAPI_KEY":             "NewsAPI.org → NewsAgent",
-        "JINA_API_KEY":            "Jina Search/Reader → NewsAgent + ExpertAgent",
-        "REDDIT_CLIENT_ID":        "Reddit PRAW → SocialAgent",
-        "REDDIT_CLIENT_SECRET":    "Reddit PRAW → SocialAgent",
-        "REDDIT_USER_AGENT":       "Reddit PRAW → SocialAgent",
-        "POSTGRES_DSN":            "pgvector → KnowledgeAgent",
-        "METACULUS_API_TOKEN":     "Metaculus (optional, higher rate limit)",
-    }
-    for key, desc in all_keys.items():
-        val = os.environ.get(key, "")
-        status = "✓ set" if val else "✗ not set"
-        print(f"  {status:10s}  {key:<28s}  {desc}")
-    print()
-    print("  MarketAgent uses Polymarket + Metaculus public APIs — no key required.")
-    print()
+def _print_trajectory(t: dict, idx: int, total: int) -> None:
+    conf = t.get("confidence_pct", 0)
+    label = t.get("label", f"Path {idx}")
+    bar = _conf_bar(conf)
 
+    # ── header ────────────────────────────────────────────────────────────
+    print(f"\n  {'─' * 68}")
+    print(f"  TRAJECTORY {idx} of {total}")
+    print(f"  {label.upper()}")
+    print(f"  {bar}  {conf}%")
+    print(f"  {'─' * 68}")
 
-def _print_decomposed(d: DecomposedQuery) -> None:
-    _section("STEP 1 · QUERY DECOMPOSITION  (host: QueryDecomposer via Debate)")
-    print(f"\n  Original query: {TEST_QUERY}\n")
-    print(f"  Detected intent: {d.intent}\n")
+    # ── narrative description ─────────────────────────────────────────────
+    desc = t.get("description", "")
+    if desc:
+        print()
+        for line in textwrap.wrap(desc, width=84, initial_indent="    ",
+                                   subsequent_indent="    "):
+            print(line)
 
-    _subsection("NewsAgent sub-query")
-    print(f"  search:   {d.news.search_string}")
-    print(f"  keywords: {d.news.keywords}")
-    print(f"  window:   {d.news.time_window_days} days")
+    # ── FOR (supporting) ──────────────────────────────────────────────────
+    supporting = t.get("supporting_evidence", [])
+    if supporting:
+        print(f"\n  FOR")
+        _bullets(supporting)
 
-    _subsection("SocialAgent sub-query")
-    print(f"  subreddits:  {d.social.subreddits}")
-    print(f"  search:      {d.social.search_terms}")
-    print(f"  HN query:    {d.social.hn_query}")
-    print(f"  min_score:   {d.social.min_score}")
+    # ── AGAINST (countervailing) ──────────────────────────────────────────
+    counter = t.get("countervailing_evidence", [])
+    if counter:
+        print(f"\n  AGAINST")
+        _bullets(counter)
 
-    _subsection("ExpertAgent sub-query")
-    print(f"  search:   {d.expert.search_string}")
-    print(f"  sources:  {d.expert.target_sources}")
-    print(f"  recency:  {d.expert.recency_days} days")
-
-    _subsection("KnowledgeAgent sub-query")
-    print(f"  abstract pattern: {d.knowledge.abstract_pattern}")
-    print(f"  scenarios:        {d.knowledge.scenarios}")
-    print(f"  min_similarity:   {d.knowledge.min_similarity}")
-
-    _subsection("MarketAgent sub-query")
-    print(f"  platforms:   {d.market.platforms}")
-    print(f"  search:      {d.market.search_terms}")
-    print(f"  questions:   {d.market.resolvable_questions}")
-
-
-def _print_agent_report(report: AgentReport, elapsed: float) -> None:
-    _subsection(f"{report.agent_label}  ({elapsed:.1f}s  ·  {len(report.items)} items)")
-
-    # Show what sub-queries this agent actually used
-    if report.sub_queries:
-        print(f"  sub-queries: {report.sub_queries}")
-
-    if report.summary:
-        print(_wrap(report.summary))
-
-    if report.findings:
-        print(f"\n  Findings ({len(report.findings)}):")
-        for f in report.findings[:5]:
-            conf = f.get("confidence", "?").upper()
-            claim = f.get("claim", "")
-            src = f.get("source_title", "")
-            print(f"    [{conf}] {claim}")
-            if src:
-                print(f"           ↳ {src}")
-
-    if not report.items:
-        required_keys = _AGENT_KEYS.get(report.agent_label, [])
-        missing = [k for k in required_keys if not os.environ.get(k)]
-        if report.agent_label == "MarketAgent":
-            print("  ⚠  Public APIs returned 0 markets — search terms likely too niche/technical")
-            print("     for Polymarket (geopolitics/crypto) and Metaculus (science/policy).")
-        elif missing:
-            print(f"  ✗  Missing env vars → {', '.join(missing)}")
-            print(f"     Add them to .env to enable {report.agent_label}.")
-        elif report.agent_label == "KnowledgeAgent":
-            print("  ⚠  db_conn=None in this test — KnowledgeAgent requires POSTGRES_DSN + pgvector.")
-        else:
-            print("  ⚠  No items returned (APIs responded but matched nothing, or a fetch error).")
+    # ── key variable + falsifiable test ──────────────────────────────────
+    kv = t.get("key_variable", "")
+    ft = t.get("falsifiable_test", "")
+    if kv or ft:
+        print()
+    if kv:
+        for line in textwrap.wrap(kv, width=78, initial_indent="  Key variable:    ",
+                                   subsequent_indent="                   "):
+            print(line)
+    if ft:
+        for line in textwrap.wrap(ft, width=78, initial_indent="  Watch for:       ",
+                                   subsequent_indent="                   "):
+            print(line)
 
 
 def _print_debate_report(report: DebateReport) -> None:
-    _section(f"STEP 3 · DEBATE SYNTHESIS  ({len(report.rounds)} round(s))")
+    section(f"STEP 3 · DEBATE SYNTHESIS  ({len(report.rounds)} round(s))")
 
     for rnd in report.rounds:
-        print(f"\n  ── Round {rnd.round_num + 1} ──")
-        print("\n  Situation:")
-        print(_wrap(rnd.situation))
-        print("\n  Tensions:")
-        print(_wrap(rnd.tensions))
-        if rnd.counterintuitive:
-            print("\n  Contrarian check:")
-            print(_wrap(rnd.counterintuitive))
-        if rnd.pressure_questions:
-            print(f"\n  Pressure questions for next round: {rnd.pressure_questions}")
+        print(f"\n  {'═'*68}")
+        print(f"  ROUND {rnd.round_num + 1}")
+        print(f"  {'═'*68}")
 
-    _subsection("FINAL TRAJECTORY")
-    print(_wrap(report.final_trajectory or "(none)"))
+        # Round verdict only — the analytical delta produced this round
+        rv = rnd.round_verdict
+        if rv:
+            print(wrap(f"Established: {rv.get('established','')}", indent=4))
+            print(wrap(f"Contested:   {rv.get('contested','')}", indent=4))
+            print(f"\n    What changed this round:")
+            print(wrap(rv.get("delta", "(none)"), indent=4))
 
+    # ── Final comprehensive report ─────────────────────────────────────────
+    fr = report.final_report
+    if not fr:
+        subsection("FINAL REPORT")
+        print(wrap(report.final_trajectory or "(none)"))
+        return
 
-# ── fixtures ──────────────────────────────────────────────────────────────────
+    section("FINAL INTELLIGENCE REPORT")
 
-@pytest.fixture(scope="module")
-def openai_client():
-    key = os.environ.get("OPENAI_API_KEY", "")
-    if not key:
-        pytest.skip("OPENAI_API_KEY not set — cannot run agentic workflow test")
-    return AsyncOpenAI(api_key=key)
+    subsection("EXECUTIVE SUMMARY")
+    print(wrap(fr.executive_summary))
 
+    if fr.validated_claims:
+        subsection(f"WHAT WE KNOW  ({len(fr.validated_claims)})")
+        print("  Findings that survived all rounds of scrutiny\n")
+        _bullets(fr.validated_claims, indent=4)
 
-# ── Test 1: Decomposer alone ──────────────────────────────────────────────────
+    if fr.contested_claims:
+        subsection(f"WHAT REMAINS UNCERTAIN  ({len(fr.contested_claims)})")
+        _bullets(fr.contested_claims, indent=4)
 
-@pytest.mark.asyncio
-async def test_decomposer(openai_client):
-    """
-    Verify QueryDecomposer produces a valid typed DecomposedQuery.
-    This is the first step every Debate run starts with.
-    """
-    decomposer = QueryDecomposer(openai_client)
-    t0 = time.perf_counter()
-    decomposed = await decomposer.decompose(TEST_QUERY)
-    elapsed = time.perf_counter() - t0
+    if fr.cross_agent_syntheses:
+        subsection(f"KEY INSIGHTS  ({len(fr.cross_agent_syntheses)})")
+        print("  Conclusions only visible by combining evidence across sources\n")
+        for i, s in enumerate(fr.cross_agent_syntheses, 1):
+            print(wrap(f"({i}) {s}"))
 
-    _print_decomposed(decomposed)
-    print(f"\n  ✓ Decomposition completed in {elapsed:.1f}s")
+    if fr.trajectories:
+        subsection(f"TRAJECTORIES  ({len(fr.trajectories)})")
+        total = len(fr.trajectories)
+        for idx, t in enumerate(fr.trajectories, 1):
+            _print_trajectory(t, idx, total)
 
-    # Validate structure
-    assert decomposed.intent, "intent should not be empty"
-    assert len(decomposed.news.keywords) >= 2, "need at least 2 news keywords"
-    assert decomposed.social.subreddits, "need at least one subreddit"
-    assert decomposed.expert.target_sources, "need at least one expert source"
-    assert decomposed.knowledge.abstract_pattern, "need an abstract pattern"
-    assert not any(
-        noun in decomposed.knowledge.abstract_pattern.lower()
-        for noun in ["openai", "anthropic", "google", "microsoft"]
-    ), "abstract_pattern must not contain proper nouns from the query"
-    assert decomposed.market.resolvable_questions, "need at least one market question"
+    if fr.critical_blindspots:
+        subsection(f"CRITICAL BLINDSPOTS  ({len(fr.critical_blindspots)})")
+        for i, b in enumerate(fr.critical_blindspots, 1):
+            print(wrap(f"[{i}] {b}"))
 
-
-# ── Test 2: Agents in parallel ────────────────────────────────────────────────
-
-@pytest.mark.asyncio
-async def test_market_agent_public_apis(openai_client):
-    """
-    Smoke-test MarketAgent directly against public Polymarket + Metaculus APIs.
-    These require NO API key. If this returns 0 items the topic is simply too
-    niche for prediction markets (not an infrastructure failure).
-    """
-    from memex.sources.polymarket import PolymarketClient
-    from memex.sources.metaculus import MetaculusClient
-
-    _section("MARKET AGENT · PUBLIC API SMOKE TEST (no key needed)")
-
-    poly = PolymarketClient()
-    meta = MetaculusClient()
-
-    # Try a broad term first (should always return results on Polymarket/Metaculus)
-    broad_terms = ["AI", "technology", "OpenAI"]
-    for term in broad_terms:
-        poly_results = await poly.search(term, limit=5)
-        meta_results = await meta.search(term, limit=5)
-        print(f"\n  Term: {term!r}")
-        print(f"    Polymarket: {len(poly_results)} markets")
-        for m in poly_results[:2]:
-            prob = f"{round(m['yes_probability']*100)}%" if m.get('yes_probability') else "n/a"
-            print(f"      [{prob}] {m['question'][:80]}")
-        print(f"    Metaculus:  {len(meta_results)} questions")
-        for q in meta_results[:2]:
-            prob = f"{round(q['probability']*100)}%" if q.get('probability') else "n/a"
-            print(f"      [{prob}] {q['question'][:80]}")
-
-    print()
-    # At least the broad term 'AI' should get something from Metaculus
-    ai_meta = await meta.search("AI", limit=10)
-    assert len(ai_meta) > 0 or True, "Metaculus returned 0 results — may be a network issue"
-    if ai_meta:
-        print(f"  ✓ Metaculus API live: {len(ai_meta)} AI questions found")
-    else:
-        print("  ⚠ Metaculus returned 0 for 'AI' — possible rate limit or network block")
+    if fr.analyst_note:
+        subsection("ANALYST NOTE  (watch next 30-90 days)")
+        print(wrap(fr.analyst_note))
 
 
-@pytest.mark.asyncio
-async def test_five_agents_parallel(openai_client):
-    """
-    Run all 5 agents in parallel using the decomposed sub-queries.
-    Sources missing API keys return empty items gracefully — the test
-    still passes and reports what was skipped.
-    """
-    _print_env_status()
-
-    decomposer = QueryDecomposer(openai_client)
-    decomposed = await decomposer.decompose(TEST_QUERY)
-
-    _section("STEP 2 · 5 AGENTS RUNNING IN PARALLEL")
-    print(f"\n  Query intent: {decomposed.intent}\n")
-
-    news_agent      = NewsAgent(openai_client)
-    social_agent    = SocialAgent(openai_client)
-    expert_agent    = ExpertAgent(openai_client)
-    knowledge_agent = KnowledgeAgent(openai_client, db_conn=None)
-    market_agent    = MarketAgent(openai_client)
-
-    t0 = time.perf_counter()
-    reports = await asyncio.gather(
-        news_agent.run_decomposed(decomposed.news),
-        social_agent.run_decomposed(decomposed.social),
-        expert_agent.run_decomposed(decomposed.expert),
-        knowledge_agent.run_decomposed(decomposed.knowledge),
-        market_agent.run_decomposed(decomposed.market),
-        return_exceptions=True,
-    )
-    elapsed = time.perf_counter() - t0
-
-    print(f"\n  All 5 agents completed in {elapsed:.1f}s (wall-clock, parallel)\n")
-
-    agent_names = ["NewsAgent", "SocialAgent", "ExpertAgent", "KnowledgeAgent", "MarketAgent"]
-    for name, result in zip(agent_names, reports):
-        if isinstance(result, Exception):
-            print(f"\n  ✗ {name} raised: {result}")
-        else:
-            _print_agent_report(result, elapsed)
-
-    # At least the market and expert agents should produce something
-    # (they use public APIs — no key needed for Polymarket, Metaculus, Jina Search)
-    non_error = [r for r in reports if not isinstance(r, Exception)]
-    assert non_error, "At least one agent must return a report"
-    total_items = sum(len(r.items) for r in non_error if isinstance(r, AgentReport))
-    print(f"\n  Total items across all agents: {total_items}")
-
-
-# ── Test 3: Full pipeline (Debate) ────────────────────────────────────────────
+# ── test ──────────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_full_debate_pipeline(openai_client):
@@ -360,8 +215,8 @@ async def test_full_debate_pipeline(openai_client):
 
     base_agent.py is the shared abstract base class — NOT the host.
     """
-    _print_env_status()
-    _section("STEP 0 · PIPELINE OVERVIEW")
+    print_env_status()
+    section("STEP 0 · PIPELINE OVERVIEW")
     print("""
   ┌─────────────────────────────────────────────────────────────────────┐
   │  User query                                                         │
@@ -383,24 +238,25 @@ async def test_full_debate_pipeline(openai_client):
 
     print(f"  Query: {TEST_QUERY}\n")
 
-    # Single round for speed in CI; set rounds=2 for a richer debate
+    rounds = int(os.environ.get("DEBATE_ROUNDS", 2))
+    print(f"  Debate rounds: {rounds}  (override with DEBATE_ROUNDS=N in .env)\n")
     debate = Debate(
         client=openai_client,
         db_conn=None,   # skip pgvector — KnowledgeAgent returns empty gracefully
-        rounds=1,
+        rounds=rounds,
     )
 
     t0 = time.perf_counter()
     report: DebateReport = await debate.run(TEST_QUERY)
     total = time.perf_counter() - t0
 
-    _section(f"STEP 2 · AGENT REPORTS  (from Debate.agent_reports)")
+    section(f"STEP 2 · AGENT REPORTS  (from Debate.agent_reports)")
     for agent_type, agent_report in report.agent_reports.items():
-        _print_agent_report(agent_report, elapsed=total)
+        print_agent_report(agent_report, elapsed=total)
 
     _print_debate_report(report)
 
-    _section(f"PIPELINE COMPLETE  ·  Total wall-clock: {total:.1f}s")
+    section(f"PIPELINE COMPLETE  ·  Total wall-clock: {total:.1f}s")
     print(f"  Agents that returned items: "
           f"{[k for k, v in report.agent_reports.items() if v.items]}")
     total_items = sum(len(v.items) for v in report.agent_reports.values())
@@ -408,12 +264,11 @@ async def test_full_debate_pipeline(openai_client):
     print(f"  Debate rounds completed: {len(report.rounds)}")
     print()
 
-    # Assertions
     assert report.query == TEST_QUERY
     assert len(report.rounds) >= 1, "at least one synthesis round expected"
     final = report.rounds[-1]
-    assert final.situation, "synthesis must produce a situation assessment"
-    assert final.trajectory, "synthesis must produce a trajectory"
+    assert final.round_verdict.get("delta"), "synthesis must produce a round delta"
+    assert final.pressure_questions or final.round_verdict, "synthesis must produce structured output"
     assert "market" in report.agent_reports, "MarketAgent report must be present"
 
 
@@ -432,7 +287,9 @@ if __name__ == "__main__":
     client = AsyncOpenAI(api_key=key)
 
     async def _main():
-        # Step 1: decompose
+        from memex.forum.decomposer import QueryDecomposer
+        from memex.tests.test_phase1_decomposer import _print_decomposed
+
         decomposer = QueryDecomposer(client)
         print(f"\nDecomposing: {TEST_QUERY!r} …")
         t0 = time.perf_counter()
@@ -440,18 +297,18 @@ if __name__ == "__main__":
         _print_decomposed(decomposed)
         print(f"\n  ✓ {time.perf_counter() - t0:.1f}s")
 
-        # Step 2+3: full debate (1 round)
-        print(f"\nRunning Debate (1 round) …")
-        debate = Debate(client=client, db_conn=None, rounds=1)
+        rounds = int(os.environ.get("DEBATE_ROUNDS", 2))
+        print(f"\nRunning Debate ({rounds} round(s)) …")
+        debate = Debate(client=client, db_conn=None, rounds=rounds)
         t0 = time.perf_counter()
         report = await debate.run(TEST_QUERY)
         elapsed = time.perf_counter() - t0
 
-        _section("AGENT REPORTS")
+        section("AGENT REPORTS")
         for agent_type, agent_report in report.agent_reports.items():
-            _print_agent_report(agent_report, elapsed=elapsed)
+            print_agent_report(agent_report, elapsed=elapsed)
 
         _print_debate_report(report)
-        _section(f"DONE  ·  {elapsed:.1f}s")
+        section(f"DONE  ·  {elapsed:.1f}s")
 
     asyncio.run(_main())

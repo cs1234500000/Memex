@@ -29,6 +29,8 @@ Utilities:
 
 from __future__ import annotations
 
+import asyncio
+import json
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -41,7 +43,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from openai import AsyncOpenAI
 
 from memex.api.schemas import (
@@ -182,6 +184,80 @@ async def analyze(req: AnalyzeRequest):
 async def get_run(run_id: str):
     store: KnowledgeStore = _require_db("GET /runs")
     raise HTTPException(501, "Not yet implemented")
+
+
+@app.get("/forum")
+async def forum_dashboard():
+    """Serve the Intelligence Forum dashboard UI."""
+    html_path = Path(__file__).parents[2] / "web" / "forum.html"
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+    raise HTTPException(404, "Forum dashboard not found. Expected at web/forum.html")
+
+
+@app.get("/analyze/stream")
+async def analyze_stream(q: str = Query(..., min_length=5, max_length=500)):
+    """
+    Server-Sent Events endpoint that streams the full debate progress in real time.
+
+    Events emitted (each is a JSON object with 'type' and 'data' keys):
+      query_start   – query received, analysis beginning
+      decompose_done – intent resolved, per-agent sub-queries ready
+      agent_start   – a specific agent has begun researching
+      agent_done    – a specific agent has finished (includes summary + findings)
+      round_start   – the Debate is synthesising a round
+      round_done    – round synthesis complete (claims, contradictions, verdict)
+      final_done    – final comprehensive report ready
+      done          – stream finished
+      error         – something went wrong
+    """
+    from memex.forum.engine import Debate
+
+    orchestrator = _state.get("orchestrator")
+    if orchestrator is None:
+        raise HTTPException(503, "Orchestrator not initialised")
+
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def on_event(event_type: str, data: dict) -> None:
+        await queue.put({"type": event_type, "data": data})
+
+    async def run_debate() -> None:
+        try:
+            debate = Debate(
+                client=orchestrator.client,
+                db_conn=_state.get("db"),
+            )
+            await queue.put({"type": "query_start", "data": {"query": q}})
+            await debate.run(q, on_event=on_event)
+            await queue.put({"type": "done", "data": {}})
+        except Exception as exc:
+            logger.error("Debate stream error: %s", exc, exc_info=True)
+            await queue.put({"type": "error", "data": {"message": str(exc)}})
+        finally:
+            await queue.put(None)  # sentinel – close the stream
+
+    task = asyncio.create_task(run_debate())
+
+    async def event_generator():
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    return
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except asyncio.CancelledError:
+            task.cancel()
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

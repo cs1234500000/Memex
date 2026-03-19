@@ -48,17 +48,37 @@ class SocialAgent(BaseAgent):
         self.hn = HackerNewsClient()
 
     async def run_decomposed(self, query: SocialQuery) -> AgentReport:
-        reddit_items, hn_items = await asyncio.gather(
-            self._fetch_reddit(query.search_terms[0] if query.search_terms else "",
-                               subreddits=query.subreddits, min_score=query.min_score),
+        reddit_tasks = [
+            self._fetch_reddit(term, subreddits=query.subreddits, min_score=query.min_score)
+            for term in (query.search_terms or [""])
+        ]
+        results = await asyncio.gather(
+            *reddit_tasks,
             self._fetch_hn(query.hn_query),
             return_exceptions=True,
         )
+
+        hn_result = results[-1]
+        reddit_results = results[:-1]
+
         items: list[ContentItem] = []
-        if not isinstance(reddit_items, Exception): items.extend(reddit_items)
-        if not isinstance(hn_items, Exception): items.extend(hn_items)
+        seen_urls: set[str] = set()
+        for result in reddit_results:
+            if isinstance(result, Exception):
+                continue
+            for item in result:
+                if item.url not in seen_urls:
+                    seen_urls.add(item.url)
+                    items.append(item)
+        if not isinstance(hn_result, Exception):
+            for item in hn_result:
+                if item.url not in seen_urls:
+                    seen_urls.add(item.url)
+                    items.append(item)
+
+        scoring_query = query.search_terms[0] if query.search_terms else query.hn_query
         for item in items:
-            item.relevance_score = await self.score(item, query.search_terms[0] if query.search_terms else "")
+            item.relevance_score = await self.score(item, scoring_query)
         summary, findings = await self._produce_report(query.search_terms, items)
         return AgentReport(
             agent_type=self.agent_type, agent_label=self.agent_label,
@@ -83,11 +103,11 @@ class SocialAgent(BaseAgent):
     async def _fetch_reddit(
         self, query: str, subreddits: list[str] | None = None, min_score: int = 25
     ) -> list[ContentItem]:
-        posts = await self.reddit.search(query, limit=15)
+        posts = await self.reddit.search(query, subreddits=subreddits, limit=15)
         items: list[ContentItem] = []
         for post in posts:
-            # Build body from selftext + top comments to give The Debate
-            # the community reaction, not just the link title.
+            if post.get("score", 0) < min_score:
+                continue
             selftext = (post.get("selftext") or "").strip()
             comments = post.get("top_comments") or ""
             if isinstance(comments, list):
@@ -105,7 +125,6 @@ class SocialAgent(BaseAgent):
                     "subreddit": post.get("subreddit"),
                     "upvotes": post.get("score"),
                     "num_comments": post.get("num_comments"),
-                    "upvote_ratio": post.get("upvote_ratio"),
                 },
             ))
         return items

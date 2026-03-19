@@ -210,7 +210,7 @@ class BaseAgent(ABC):
             return f"[{self.agent_label}] No relevant content found.", []
 
         bullets = "\n".join(
-            f"- [{i.source}] {i.title} ({i.published_at or 'n/d'}): {i.body[:300]}"
+            f"- [{i.source}] {i.title} | {i.url} ({i.published_at or 'n/d'}): {i.body[:300]}"
             for i in items[:20]
         )
 
@@ -225,10 +225,15 @@ class BaseAgent(ABC):
                             f"Known bias: {self.caveats_text}\n\n"
                             "Produce a structured report with:\n"
                             "  summary: 3-5 sentence narrative of what you found\n"
-                            "  findings: up to 8 specific factual claims with attribution\n"
-                            "Be concrete. Name entities. Include dates when available. "
-                            "Flag speculation vs confirmed fact. "
-                            'confidence must be exactly "high", "medium", or "low".'
+                            "  findings: up to 10 specific factual claims with attribution\n\n"
+                            "For each finding:\n"
+                            "  - claim: one concrete factual statement with date if available\n"
+                            "  - source_title: title of the article/post the claim comes from\n"
+                            "  - url: the EXACT url from the content item (copy it verbatim, do NOT invent URLs)\n"
+                            "  - confidence:\n"
+                            '      "high" = directly stated in a primary source (official announcement, data release, named quote)\n'
+                            '      "medium" = reported by credible secondary source, or inferred from multiple items\n'
+                            '      "low" = single unverified source, rumor, speculation, or opinion\n'
                         ),
                     },
                     {

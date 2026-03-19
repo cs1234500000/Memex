@@ -29,21 +29,21 @@ logger = logging.getLogger(__name__)
 # ── Pydantic schema ────────────────────────────────────────────────────────────
 
 class NewsQuery(BaseModel):
-    search_string: str = Field(description="Short scannable English string optimised for keyword matching against headlines")
-    keywords: list[str] = Field(description="4-6 individual keywords for headline filtering")
+    search_string: str = Field(description="2-4 word keyword string: topic entity + action verb. No abstract words (impact, effect, advantage). NOT a sentence.")
+    keywords: list[str] = Field(description="4-6 keywords: the entity name, 1-2 competitor/related product names, 1-2 concrete action verbs (launch, release, adopt). NEVER reuse abstract words from the user query.")
     time_window_days: int = Field(description="How many days back is relevant for this topic")
     source_hints: list[str] = Field(description="Preferred news sources or wire services", default_factory=list)
 
 
 class SocialQuery(BaseModel):
     subreddits: list[str] = Field(description="3-5 specific subreddit names (without r/ prefix)")
-    search_terms: list[str] = Field(description="Conversational search strings matching how real people discuss this")
-    hn_query: str = Field(description="Terse technical query matching HN's engineering/founder audience")
+    search_terms: list[str] = Field(description="3 diverse conversational strings: one opinion-seeking ('anyone tried X?'), one comparative ('X vs Y'), one experience-based ('switched from Y to X')")
+    hn_query: str = Field(description="1-3 word terse search matching HN's search index (e.g. 'OpenClaw' or 'Show HN OpenClaw')")
     min_score: int = Field(description="Minimum upvote score — higher for mature topics, lower for niche/emerging")
 
 
 class ExpertQuery(BaseModel):
-    search_string: str = Field(description="Research-grade formulation using expert community vocabulary")
+    search_string: str = Field(description="Analytical query using domain-expert jargon. Must NOT contain any word from the user's original query. Reframe into the vocabulary an analyst would use.")
     target_sources: list[str] = Field(description="3-5 specific named sources appropriate for this domain")
     depth: str = Field(description="brief | standard | deep")
     recency_days: int = Field(description="Tight (14-30) for fast-moving topics, loose (60-90) for structural ones")
@@ -57,7 +57,7 @@ class KnowledgeQuery(BaseModel):
 
 class MarketQuery(BaseModel):
     platforms: list[str] = Field(description="Which prediction market platforms to query: polymarket, metaculus, manifold")
-    search_terms: list[str] = Field(description="Terms matching how prediction markets title their questions")
+    search_terms: list[str] = Field(description="2-3 short noun phrases (2-4 words each) matching how prediction markets title questions. Use category terms and competitor names, NOT the user's original phrasing.")
     resolvable_questions: list[str] = Field(description="2-3 example resolvable (binary/numeric, time-bound) questions that plausibly exist")
 
 
@@ -81,29 +81,42 @@ sub-queries, one per agent.
 ## The 5 agents and what they need
 
 **NewsAgent** searches news APIs and RSS feeds.
-- Needs: a short, scannable English search string optimized for \
-keyword matching against headlines and article abstracts.
-- Think like a journalist searching an archive: concrete nouns, \
-named entities, action verbs. No abstract framing.
-- Include a list of 4-6 individual keywords for headline filtering.
+- search_string must be 2-5 words: entity + event verb. It feeds \
+directly into a keyword search engine — NOT a semantic search.
+  - Good: "OpenClaw launch AI agents"
+  - Good: "Nvidia export controls China"
+  - Bad: "What is the impact of OpenClaw on the AI ecosystem" (sentence)
+  - Bad: "OpenClaw AI agents ecosystem advantages disadvantages" (query dump)
+- keywords: 4-6 individual concrete nouns/verbs. Mix the topic entity \
+with related named entities, competitors, and action verbs.
+  - Good: ["OpenClaw", "AI agents", "framework", "LangChain", "release", "open-source"]
+  - Bad: ["OpenClaw", "impact", "ecosystem", "advantages", "disadvantages"] (abstract)
 - Set a time window: how many days back is relevant for this topic?
 
 **SocialAgent** searches Reddit and Hacker News.
-- Needs: specific subreddit targets (3-5) + a conversational search \
-string that matches how real people discuss this topic, not how \
-journalists write about it.
+- search_terms: provide 3 diverse strings that match how REAL PEOPLE \
+talk, not how a journalist or analyst would frame it:
+  - One opinion-seeking: "anyone tried OpenClaw yet?"
+  - One comparative: "OpenClaw vs LangChain vs CrewAI"
+  - One experience-based: "switched to OpenClaw from LangChain"
 - Always include at least one meta-community (r/geopolitics, \
 r/investing, r/technology, r/worldnews, r/economics, r/stocks, \
 r/MachineLearning, r/singularity — pick the most relevant).
-- The HN query should be terse and technical, matching HN's \
-engineering/founder audience.
+- hn_query: 1-3 words MAXIMUM. This feeds into HN's terse search \
+index. Just the entity name is often best.
+  - Good: "OpenClaw"
+  - Good: "Show HN OpenClaw"
+  - Bad: "OpenClaw AI ecosystem impact" (too many words, won't match)
 - Set min_score: higher (100+) for mature topics with lots of \
 content, lower (25+) for niche or emerging topics.
 
 **ExpertAgent** retrieves long-form analysis from think tanks, \
 newsletters, and academic sources.
-- Needs: a research-grade formulation — precise, analytical, using \
-the vocabulary of the relevant expert community.
+- search_string: reframe the query using domain-expert vocabulary — \
+do NOT paraphrase or restate the original query.
+  - Good: "open-source agent framework competitive dynamics developer ecosystem"
+  - Good: "AI agent orchestration market structure analysis"
+  - Bad: "Impact of OpenClaw on AI agents ecosystem" (paraphrase of query)
 - Name 3-5 specific target sources appropriate for this topic domain.
   Examples by domain:
   - Geopolitics: RAND, Brookings, CSIS, Foreign Affairs, War on the Rocks
@@ -150,28 +163,56 @@ crypto, Metaculus skews science and policy, Manifold is broadest.
 1. **Language**: Always output in English regardless of input language. \
    The intent field should be a clean English translation/summary.
 
-2. **Specificity gradient**: NewsAgent gets the most literal/surface \
-   query. KnowledgeAgent gets the most abstract. The others sit \
-   between. Do not give all agents the same keywords.
+2. **NO PARAPHRASING**: This is the most important rule. Each agent \
+   sub-query must be genuinely tailored to that agent's source type. \
+   If you find that two agents got similar-sounding strings, you have \
+   failed. The LLM default is to paraphrase the original query — \
+   you must actively fight this instinct.
 
-3. **Domain sensitivity**: Adapt source hints and subreddits to the \
+3. **Specificity gradient**: NewsAgent gets a tight keyword string \
+   (2-5 words). SocialAgent gets casual conversational phrasing. \
+   ExpertAgent gets reframed analytical vocabulary. KnowledgeAgent \
+   gets the most abstract structural pattern. MarketAgent gets \
+   resolvable questions. No two agents should receive similar text.
+
+4. **Domain sensitivity**: Adapt source hints and subreddits to the \
    actual domain. A query about military conflict needs different \
    subreddits than a query about startup fundraising.
 
-4. **Scope calibration**: If the query is narrow (a single company, \
+5. **Scope calibration**: If the query is narrow (a single company, \
    a single event), keep time windows tight and min_score high. \
    If the query is structural (an ongoing trend, a systemic shift), \
    widen the time window and lower the score threshold.
 
-5. **No hallucinated markets**: For MarketQuery.resolvable_questions, \
+6. **No hallucinated markets**: For MarketQuery.resolvable_questions, \
    only write questions that plausibly exist on prediction markets — \
    verifiable, time-bound, binary or numeric. Do not fabricate \
    specific URLs or market IDs.
 
-6. **KnowledgeAgent caveat**: The abstract_pattern must not contain \
+7. **KnowledgeAgent caveat**: The abstract_pattern must not contain \
    any proper noun from the original query (no company names, person \
    names, country names, product names). If you find yourself writing \
    one, you have not abstracted enough.
+
+## Worked example
+
+User query: "How will the EU Carbon Border Adjustment Mechanism \
+affect global steel trade and competitive dynamics?"
+
+Good decomposition (abbreviated):
+- NewsAgent search_string: "EU CBAM steel tariff"
+  keywords: ["CBAM", "carbon border", "steel", "EU tariff", "emissions", "trade"]
+- SocialAgent search_terms: ["CBAM impact on steel imports?", "EU carbon tariff vs US steel industry", "anyone modeled CBAM costs for manufacturing?"]
+  hn_query: "CBAM"
+- ExpertAgent search_string: "carbon border adjustment mechanism trade competitiveness industrial decarbonization"
+- KnowledgeAgent abstract_pattern: "Dominant trading bloc imposing regulatory costs on imports, forcing adaptation or exclusion among external producers"
+- MarketAgent search_terms: ["EU carbon price", "CBAM implementation", "steel tariff 2026"]
+
+Bad decomposition (what to avoid):
+- NewsAgent search_string: "EU CBAM effect on global steel trade" ← paraphrase of query
+- SocialAgent hn_query: "EU CBAM steel trade competitive dynamics" ← too many words, paraphrase
+- ExpertAgent search_string: "How will CBAM affect global steel trade and competitive dynamics" ← restated query
+- All agents using "affect", "competitive dynamics", "global steel trade" ← query-word leakage
 
 ## Output
 

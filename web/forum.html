@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Memex · Intelligence Forum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #07090f;
+  --bg2:      #0d1120;
+  --surface:  #111827;
+  --surface2: #1a2438;
+  --border:   #1e2d45;
+  --border2:  #263a56;
+  --text:     #ccd6f6;
+  --muted:    #5f7aad;
+  --dim:      #3a4e6e;
+
+  --news:     #38bdf8;
+  --social:   #c084fc;
+  --expert:   #4ade80;
+  --knowledge:#fbbf24;
+  --market:   #fb7185;
+  --debate:   #67e8f9;
+  --final:    #a78bfa;
+
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --display: 'Syne', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --r: 6px;
+  --r2: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Layout ── */
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* ── Header ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(7,9,15,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.logo {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: #fff;
+}
+.logo span { color: var(--debate); }
+.header-sep { flex: 1; }
+.status-badge {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .25rem .6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  background: var(--bg2);
+  transition: all .3s;
+}
+.status-badge.active {
+  border-color: var(--debate);
+  color: var(--debate);
+  box-shadow: 0 0 12px rgba(103,232,249,.15);
+}
+.status-badge.done {
+  border-color: var(--expert);
+  color: var(--expert);
+}
+.status-badge.error {
+  border-color: var(--market);
+  color: var(--market);
+}
+
+/* ── Query section ── */
+.query-section {
+  padding: 2.5rem 0 2rem;
+}
+.query-label {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .75rem;
+}
+.query-box {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-end;
+}
+textarea#query-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 400;
+  padding: .85rem 1.1rem;
+  resize: none;
+  line-height: 1.5;
+  min-height: 64px;
+  max-height: 160px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  overflow: hidden;
+}
+textarea#query-input::placeholder { color: var(--dim); }
+textarea#query-input:focus {
+  border-color: var(--debate);
+  box-shadow: 0 0 0 3px rgba(103,232,249,.08);
+}
+button#analyze-btn {
+  font-family: var(--display);
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .75rem 1.6rem;
+  border: none;
+  border-radius: var(--r2);
+  background: var(--debate);
+  color: #07090f;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .2s, transform .1s;
+  height: 48px;
+  align-self: flex-end;
+}
+button#analyze-btn:hover { opacity: .85; }
+button#analyze-btn:active { transform: scale(.97); }
+button#analyze-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Intent bar ── */
+#intent-bar {
+  display: none;
+  margin-top: 1rem;
+  padding: .7rem 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: .88rem;
+  color: var(--muted);
+}
+#intent-bar strong {
+  color: var(--text);
+  font-weight: 500;
+}
+#intent-bar.visible { display: block; }
+
+/* ── Section labels ── */
+.section-label {
+  font-family: var(--mono);
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Agents grid ── */
+#agents-section { margin-bottom: 2rem; }
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .75rem;
+}
+@media (max-width: 900px) {
+  .agents-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .agents-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  transition: border-color .3s, box-shadow .3s;
+  cursor: default;
+  min-height: 180px;
+}
+.agent-card.state-active {
+  border-color: var(--agent-color, var(--debate));
+  box-shadow: 0 0 16px rgba(var(--agent-rgb, 103,232,249), .1);
+}
+.agent-card.state-done {
+  border-color: color-mix(in srgb, var(--agent-color, var(--text)) 40%, transparent);
+}
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.agent-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.agent-name {
+  font-family: var(--display);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--agent-color, var(--muted));
+  flex: 1;
+}
+.agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dim);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.state-active .agent-dot {
+  background: var(--agent-color, var(--debate));
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.state-done .agent-dot {
+  background: var(--agent-color, var(--expert));
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(.7); }
+}
+
+.agent-status {
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.state-active .agent-status { color: var(--agent-color, var(--debate)); }
+.state-done .agent-status { color: var(--muted); }
+
+.agent-summary {
+  font-size: .8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.state-done .agent-summary { color: var(--text); opacity: .85; }
+
+.agent-footer {
+  font-family: var(--mono);
+  font-size: .7rem;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.agent-count {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--agent-color, var(--border2)) 15%, transparent);
+  color: var(--agent-color, var(--muted));
+  font-size: .66rem;
+  font-family: var(--mono);
+}
+
+/* ── Agent findings drawer ── */
+.agent-findings {
+  display: none;
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--border);
+}
+.agent-card:hover .agent-findings.has-data { display: block; }
+
+.finding-item {
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .78rem;
+}
+.finding-item:last-child { border-bottom: none; }
+.finding-claim { color: var(--text); line-height: 1.4; }
+.finding-meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .2rem;
+}
+.finding-conf {
+  font-family: var(--mono);
+  font-size: .62rem;
+  padding: .1rem .35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.conf-high { background: rgba(74,222,128,.12); color: #4ade80; }
+.conf-medium { background: rgba(251,191,36,.12); color: #fbbf24; }
+.conf-low { background: rgba(251,113,133,.12); color: #fb7185; }
+.finding-source {
+  font-size: .68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* ── Debate section ── */
+#debate-section {
+  display: none;
+  margin-bottom: 2rem;
+}
+#debate-section.visible { display: block; }
+
+.round-tabs {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.round-tab {
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .4rem .9rem;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.round-tab.active {
+  border-color: var(--debate);
+  color: var(--debate);
+  background: rgba(103,232,249,.06);
+}
+.round-tab.loading::after {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--debate);
+  animation: pulse 1s infinite;
+}
+
+.round-panel { display: none; }
+.round-panel.active { display: block; }
+
+.round-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) { .round-grid { grid-template-columns: 1fr; } }
+
+.round-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+.round-card-header {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: .6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.round-card-body { padding: .8rem 1rem; }
+
+.claim-row {
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem;
+}
+.claim-row:last-child { border-bottom: none; }
+.claim-badges {
+  display: flex;
+  gap: .35rem;
+  margin-bottom: .3rem;
+  flex-wrap: wrap;
+}
+.badge {
+  font-family: var(--mono);
+  font-size: .6rem;
+  padding: .1rem .4rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.badge-fact     { background: rgba(56,189,248,.15); color: var(--news); }
+.badge-inference{ background: rgba(251,191,36,.12); color: var(--knowledge); }
+.badge-speculation { background: rgba(251,113,133,.12); color: var(--market); }
+.badge-sourced  { background: rgba(74,222,128,.1); color: var(--expert); }
+.badge-unsourced{ background: rgba(251,113,133,.1); color: var(--market); }
+.badge-agent    { background: var(--surface2); color: var(--muted); }
+.badge-resolved { background: rgba(74,222,128,.1); color: var(--expert); }
+.badge-unresolved { background: rgba(251,113,133,.1); color: var(--market); }
+
+.claim-text { color: var(--text); line-height: 1.45; }
+.claim-flag {
+  font-size: .75rem;
+  color: var(--knowledge);
+  margin-top: .2rem;
+  font-style: italic;
+}
+
+.contra-row {
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem;
+}
+.contra-row:last-child { border-bottom: none; }
+.contra-agents {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .35rem;
+}
+.contra-vs { color: var(--dim); font-size: .7rem; font-family: var(--mono); }
+.contra-claims {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  margin-bottom: .4rem;
+  font-size: .78rem;
+}
+.contra-claim-a { color: var(--news); }
+.contra-claim-b { color: var(--market); }
+.contra-resolution { color: var(--muted); font-size: .78rem; line-height: 1.4; }
+
+.pressure-row {
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem;
+}
+.pressure-row:last-child { border-bottom: none; }
+.pressure-claim { color: var(--text); margin-bottom: .25rem; }
+.pressure-challenge {
+  color: var(--knowledge);
+  font-size: .78rem;
+  padding: .35rem .6rem;
+  background: rgba(251,191,36,.05);
+  border-left: 2px solid var(--knowledge);
+  margin: .3rem 0;
+  border-radius: 0 3px 3px 0;
+}
+.pressure-verdict { color: var(--muted); font-size: .78rem; font-style: italic; }
+
+.finding-bullet {
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: .82rem;
+  line-height: 1.45;
+  display: flex;
+  gap: .5rem;
+}
+.finding-bullet::before {
+  content: '◆';
+  color: var(--debate);
+  font-size: .5rem;
+  flex-shrink: 0;
+  margin-top: .35rem;
+}
+.finding-bullet:last-child { border-bottom: none; }
+
+.pq-row {
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem;
+}
+.pq-row:last-child { border-bottom: none; }
+.pq-question { color: var(--text); line-height: 1.4; margin-bottom: .2rem; }
+.pq-meta { display: flex; gap: .5rem; font-size: .72rem; color: var(--muted); }
+
+/* ── Verdict card ── */
+.verdict-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  padding: 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 700px) { .verdict-card { grid-template-columns: 1fr; } }
+.verdict-field {}
+.verdict-field-label {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .35rem;
+}
+.verdict-established { color: var(--expert); font-size: .84rem; line-height: 1.45; }
+.verdict-contested { color: var(--knowledge); font-size: .84rem; line-height: 1.45; }
+.verdict-delta { color: var(--debate); font-size: .84rem; line-height: 1.45; }
+
+/* ── Final report ── */
+#final-section {
+  display: none;
+}
+#final-section.visible { display: block; }
+
+.final-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.final-card-title {
+  font-family: var(--display);
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--final);
+  margin-bottom: 1rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.executive-text {
+  font-size: .92rem;
+  line-height: 1.75;
+  color: var(--text);
+  font-weight: 300;
+}
+
+.trajectory-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1.2rem;
+  margin-bottom: .75rem;
+}
+.trajectory-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .75rem;
+}
+.trajectory-label {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.trajectory-conf {
+  font-family: var(--mono);
+  font-size: .75rem;
+  padding: .3rem .7rem;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.trajectory-desc {
+  font-size: .86rem;
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: .75rem;
+}
+.trajectory-evidence-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-bottom: .75rem;
+}
+@media (max-width: 600px) { .trajectory-evidence-grid { grid-template-columns: 1fr; } }
+.traj-ev-section {}
+.traj-ev-label {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: .4rem;
+}
+.traj-ev-label.supporting { color: var(--expert); }
+.traj-ev-label.counter { color: var(--market); }
+.traj-ev-item {
+  font-size: .8rem;
+  color: var(--muted);
+  padding: .3rem 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.4;
+  display: flex;
+  gap: .4rem;
+}
+.traj-ev-item:last-child { border-bottom: none; }
+.traj-ev-item.supporting::before { content: '+'; color: var(--expert); font-weight: 700; flex-shrink: 0; }
+.traj-ev-item.counter::before { content: '−'; color: var(--market); font-weight: 700; flex-shrink: 0; }
+.trajectory-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  font-size: .78rem;
+}
+@media (max-width: 600px) { .trajectory-meta { grid-template-columns: 1fr; } }
+.traj-meta-item {}
+.traj-meta-label {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: .2rem;
+}
+.traj-meta-value { color: var(--text); line-height: 1.4; }
+
+.claim-list { list-style: none; }
+.claim-list li {
+  padding: .45rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .84rem;
+  line-height: 1.5;
+  display: flex;
+  gap: .6rem;
+}
+.claim-list li:last-child { border-bottom: none; }
+.claim-list li::before {
+  font-size: .65rem;
+  flex-shrink: 0;
+  margin-top: .35rem;
+}
+.validated-list li::before { content: '✓'; color: var(--expert); }
+.contested-list li::before { content: '?'; color: var(--knowledge); }
+.synthesis-list li::before { content: '◈'; color: var(--final); }
+.blindspot-list li::before { content: '◉'; color: var(--market); }
+
+.analyst-note {
+  font-size: .88rem;
+  line-height: 1.7;
+  color: var(--text);
+  font-weight: 300;
+  padding: 1rem 1.2rem;
+  background: rgba(167,139,250,.06);
+  border-left: 3px solid var(--final);
+  border-radius: 0 var(--r) var(--r) 0;
+}
+
+/* ── Progress bar ── */
+.progress-track {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  display: none;
+}
+.progress-track.visible { display: block; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--debate), var(--final));
+  border-radius: 1px;
+  transition: width .5s ease;
+  width: 0%;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--dim);
+}
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: .5;
+}
+.empty-title {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: .5rem;
+}
+.empty-desc { font-size: .85rem; line-height: 1.6; }
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--debate);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Error box ── */
+.error-box {
+  display: none;
+  padding: .85rem 1rem;
+  background: rgba(251,113,133,.08);
+  border: 1px solid rgba(251,113,133,.3);
+  border-radius: var(--r);
+  color: var(--market);
+  font-size: .85rem;
+  margin-top: .75rem;
+}
+.error-box.visible { display: block; }
+
+/* ── Conf-based trajectory colors ── */
+.traj-high .trajectory-conf  { border-color: var(--expert); color: var(--expert); }
+.traj-med  .trajectory-conf  { border-color: var(--knowledge); color: var(--knowledge); }
+.traj-low  .trajectory-conf  { border-color: var(--market); color: var(--market); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">MEMEX <span>·</span> INTELLIGENCE FORUM</div>
+  <div class="header-sep"></div>
+  <div class="status-badge" id="status-badge">Idle</div>
+</header>
+
+<div class="shell">
+
+  <!-- ── Query input ── -->
+  <section class="query-section">
+    <div class="query-label">Research Query</div>
+    <div class="query-box">
+      <textarea
+        id="query-input"
+        placeholder="What is driving the AI infrastructure buildout in 2026? Who are the key players and what are the risks?"
+        rows="2"
+      ></textarea>
+      <button id="analyze-btn">Analyze</button>
+    </div>
+    <div id="error-box" class="error-box"></div>
+    <div id="intent-bar">
+      <strong>Intent:</strong> <span id="intent-text"></span>
+    </div>
+  </section>
+
+  <!-- ── Progress bar ── -->
+  <div class="progress-track" id="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- ── Agents ── -->
+  <section id="agents-section">
+    <div class="section-label">Research Agents</div>
+    <div class="agents-grid" id="agents-grid">
+
+      <div class="agent-card" id="card-news"
+           style="--agent-color:var(--news); --agent-rgb:56,189,248">
+        <div class="agent-header">
+          <span class="agent-icon">📡</span>
+          <span class="agent-name">News</span>
+          <span class="agent-dot"></span>
+        </div>
+        <div class="agent-status">Idle</div>
+        <div class="agent-summary">Breaking news, press releases, wire copy. Monitors mainstream media and official statements.</div>
+        <div class="agent-footer">
+          <span class="agent-count" id="count-news">—</span>
+        </div>
+        <div class="agent-findings" id="findings-news"></div>
+      </div>
+
+      <div class="agent-card" id="card-social"
+           style="--agent-color:var(--social); --agent-rgb:192,132,252">
+        <div class="agent-header">
+          <span class="agent-icon">💬</span>
+          <span class="agent-name">Social</span>
+          <span class="agent-dot"></span>
+        </div>
+        <div class="agent-status">Idle</div>
+        <div class="agent-summary">Reddit, HN, grassroots sentiment. Surfaces emerging narratives before mainstream coverage.</div>
+        <div class="agent-footer">
+          <span class="agent-count" id="count-social">—</span>
+        </div>
+        <div class="agent-findings" id="findings-social"></div>
+      </div>
+
+      <div class="agent-card" id="card-expert"
+           style="--agent-color:var(--expert); --agent-rgb:74,222,128">
+        <div class="agent-header">
+          <span class="agent-icon">🎓</span>
+          <span class="agent-name">Expert</span>
+          <span class="agent-dot"></span>
+        </div>
+        <div class="agent-status">Idle</div>
+        <div class="agent-summary">Think tanks, Substack, research papers. Deep analytical frameworks and specialist opinion.</div>
+        <div class="agent-footer">
+          <span class="agent-count" id="count-expert">—</span>
+        </div>
+        <div class="agent-findings" id="findings-expert"></div>
+      </div>
+
+      <div class="agent-card" id="card-knowledge"
+           style="--agent-color:var(--knowledge); --agent-rgb:251,191,36">
+        <div class="agent-header">
+          <span class="agent-icon">📚</span>
+          <span class="agent-name">Knowledge</span>
+          <span class="agent-dot"></span>
+        </div>
+        <div class="agent-status">Idle</div>
+        <div class="agent-summary">Historical precedents, structural patterns, analogical reasoning from the knowledge base.</div>
+        <div class="agent-footer">
+          <span class="agent-count" id="count-knowledge">—</span>
+        </div>
+        <div class="agent-findings" id="findings-knowledge"></div>
+      </div>
+
+      <div class="agent-card" id="card-market"
+           style="--agent-color:var(--market); --agent-rgb:251,113,133">
+        <div class="agent-header">
+          <span class="agent-icon">📊</span>
+          <span class="agent-name">Market</span>
+          <span class="agent-dot"></span>
+        </div>
+        <div class="agent-status">Idle</div>
+        <div class="agent-summary">Polymarket, Metaculus, Manifold. Crowd-aggregated probability and falsifiable forecasts.</div>
+        <div class="agent-footer">
+          <span class="agent-count" id="count-market">—</span>
+        </div>
+        <div class="agent-findings" id="findings-market"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Debate rounds ── -->
+  <section id="debate-section">
+    <div class="section-label">The Debate</div>
+    <div class="round-tabs" id="round-tabs"></div>
+    <div id="round-panels"></div>
+  </section>
+
+  <!-- ── Final report ── -->
+  <section id="final-section">
+    <div class="section-label">Final Report</div>
+    <div id="final-content"></div>
+  </section>
+
+</div><!-- /.shell -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let eventSource = null;
+let activeRound = 0;
+let roundCount = 0;
+let progressStep = 0;
+const PROGRESS_STEPS = 12; // approximate events for full progress
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const queryInput   = document.getElementById('query-input');
+const analyzeBtn   = document.getElementById('analyze-btn');
+const errorBox     = document.getElementById('error-box');
+const intentBar    = document.getElementById('intent-bar');
+const intentText   = document.getElementById('intent-text');
+const statusBadge  = document.getElementById('status-badge');
+const progressTrack= document.getElementById('progress-track');
+const progressFill = document.getElementById('progress-fill');
+const debateSection= document.getElementById('debate-section');
+const finalSection = document.getElementById('final-section');
+const roundTabs    = document.getElementById('round-tabs');
+const roundPanels  = document.getElementById('round-panels');
+const finalContent = document.getElementById('final-content');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function setStatus(text, cls='') {
+  statusBadge.textContent = text;
+  statusBadge.className = 'status-badge' + (cls ? ' ' + cls : '');
+}
+
+function setProgress(step) {
+  progressStep = step;
+  const pct = Math.min(100, Math.round((step / PROGRESS_STEPS) * 100));
+  progressFill.style.width = pct + '%';
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add('visible');
+}
+
+function hideError() {
+  errorBox.classList.remove('visible');
+}
+
+function confBadge(conf) {
+  const cls = conf === 'high' ? 'conf-high' : conf === 'medium' ? 'conf-medium' : 'conf-low';
+  return `<span class="finding-conf ${cls}">${esc(conf)}</span>`;
+}
+
+function agentBadge(agent) {
+  const colors = {
+    news:'badge-fact', social:'badge-inference', expert:'badge-sourced',
+    knowledge:'badge-sourced', market:'badge-fact'
+  };
+  return `<span class="badge badge-agent">${esc(agent)}</span>`;
+}
+
+function trajConfClass(pct) {
+  if (pct >= 55) return 'traj-high';
+  if (pct >= 30) return 'traj-med';
+  return 'traj-low';
+}
+
+// ── Auto-resize textarea ──────────────────────────────────────────────────────
+queryInput.addEventListener('input', () => {
+  queryInput.style.height = 'auto';
+  queryInput.style.height = Math.min(160, queryInput.scrollHeight) + 'px';
+});
+queryInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    analyzeBtn.click();
+  }
+});
+
+// ── Reset UI ──────────────────────────────────────────────────────────────────
+function resetUI() {
+  hideError();
+  intentBar.classList.remove('visible');
+  debateSection.classList.remove('visible');
+  finalSection.classList.remove('visible');
+  roundTabs.innerHTML = '';
+  roundPanels.innerHTML = '';
+  finalContent.innerHTML = '';
+  roundCount = 0;
+  progressStep = 0;
+  progressFill.style.width = '0%';
+  progressTrack.classList.add('visible');
+
+  ['news','social','expert','knowledge','market'].forEach(a => {
+    const card = document.getElementById('card-' + a);
+    card.className = 'agent-card';
+    card.querySelector('.agent-status').textContent = 'Idle';
+    card.querySelector('.agent-summary').textContent = agentDefaultDesc(a);
+    document.getElementById('count-' + a).textContent = '—';
+    const fd = document.getElementById('findings-' + a);
+    fd.innerHTML = '';
+    fd.className = 'agent-findings';
+  });
+}
+
+function agentDefaultDesc(a) {
+  return {
+    news: 'Breaking news, press releases, wire copy. Monitors mainstream media and official statements.',
+    social: 'Reddit, HN, grassroots sentiment. Surfaces emerging narratives before mainstream coverage.',
+    expert: 'Think tanks, Substack, research papers. Deep analytical frameworks and specialist opinion.',
+    knowledge: 'Historical precedents, structural patterns, analogical reasoning from the knowledge base.',
+    market: 'Polymarket, Metaculus, Manifold. Crowd-aggregated probability and falsifiable forecasts.',
+  }[a] || '';
+}
+
+// ── Event handlers ────────────────────────────────────────────────────────────
+function handleEvent(e) {
+  let msg;
+  try { msg = JSON.parse(e.data); }
+  catch { return; }
+
+  const { type, data } = msg;
+
+  if (type === 'query_start') {
+    setStatus('Decomposing…', 'active');
+    setProgress(1);
+  }
+
+  else if (type === 'decompose_done') {
+    setStatus('Agents running…', 'active');
+    setProgress(2);
+    intentText.textContent = data.intent || '';
+    intentBar.classList.add('visible');
+  }
+
+  else if (type === 'agent_start') {
+    const card = document.getElementById('card-' + data.agent);
+    if (!card) return;
+    card.classList.add('state-active');
+    card.querySelector('.agent-status').textContent = 'Researching…';
+    card.querySelector('.agent-summary').textContent = '';
+  }
+
+  else if (type === 'agent_done') {
+    const card = document.getElementById('card-' + data.agent);
+    if (!card) return;
+    card.classList.remove('state-active');
+    card.classList.add('state-done');
+
+    const isError = !!data.error;
+    card.querySelector('.agent-status').textContent =
+      isError ? 'Failed' : `${data.item_count} items`;
+    card.querySelector('.agent-summary').textContent =
+      (data.summary || '').replace(/^\[.*?\]\s*/, '');
+
+    const countEl = document.getElementById('count-' + data.agent);
+    countEl.textContent = isError ? 'error' : `${(data.findings || []).length} findings`;
+
+    if (!isError && data.findings && data.findings.length > 0) {
+      renderAgentFindings(data.agent, data.findings);
+    }
+
+    setProgress(Math.min(8, progressStep + 1));
+  }
+
+  else if (type === 'round_start') {
+    const rn = data.round;
+    debateSection.classList.add('visible');
+    addRoundTab(rn, true);
+    setStatus(`Round ${rn + 1} synthesizing…`, 'active');
+    setProgress(Math.min(9, progressStep + 1));
+  }
+
+  else if (type === 'round_done') {
+    const rn = data.round;
+    updateRoundTab(rn, false);
+    renderRound(rn, data);
+    setProgress(Math.min(11, progressStep + 1));
+    setStatus(`Round ${rn + 1} complete`, 'active');
+  }
+
+  else if (type === 'final_done') {
+    renderFinalReport(data);
+    setProgress(12);
+    finalSection.classList.add('visible');
+  }
+
+  else if (type === 'done') {
+    setStatus('Complete', 'done');
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = 'Analyze';
+    if (eventSource) { eventSource.close(); eventSource = null; }
+  }
+
+  else if (type === 'error') {
+    showError('Analysis error: ' + (data.message || 'Unknown error'));
+    setStatus('Error', 'error');
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = 'Analyze';
+    if (eventSource) { eventSource.close(); eventSource = null; }
+  }
+}
+
+// ── Agent findings ────────────────────────────────────────────────────────────
+function renderAgentFindings(agent, findings) {
+  const el = document.getElementById('findings-' + agent);
+  if (!el) return;
+  el.innerHTML = findings.slice(0, 6).map(f => `
+    <div class="finding-item">
+      <div class="finding-claim">${esc(f.claim)}</div>
+      <div class="finding-meta">
+        ${confBadge(f.confidence)}
+        ${f.source_title ? `<span class="finding-source" title="${esc(f.url)}">${esc(f.source_title)}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+  el.classList.add('has-data');
+}
+
+// ── Round tabs ────────────────────────────────────────────────────────────────
+function addRoundTab(rn, loading) {
+  roundCount = Math.max(roundCount, rn + 1);
+  const id = `tab-r${rn}`;
+  if (document.getElementById(id)) return;
+
+  const btn = document.createElement('button');
+  btn.className = 'round-tab' + (loading ? ' loading' : '') + (rn === activeRound ? ' active' : '');
+  btn.id = id;
+  btn.textContent = `Round ${rn + 1}`;
+  btn.addEventListener('click', () => switchRound(rn));
+  roundTabs.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.className = 'round-panel' + (rn === activeRound ? ' active' : '');
+  panel.id = `panel-r${rn}`;
+  panel.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:1rem 0">
+    <span class="spinner"></span>&nbsp; Synthesising round ${rn + 1}…
+  </div>`;
+  roundPanels.appendChild(panel);
+}
+
+function updateRoundTab(rn, loading) {
+  const tab = document.getElementById(`tab-r${rn}`);
+  if (tab) tab.classList.remove('loading');
+}
+
+function switchRound(rn) {
+  activeRound = rn;
+  document.querySelectorAll('.round-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.round-panel').forEach(p => p.classList.remove('active'));
+  const tab = document.getElementById(`tab-r${rn}`);
+  const panel = document.getElementById(`panel-r${rn}`);
+  if (tab) tab.classList.add('active');
+  if (panel) panel.classList.add('active');
+}
+
+// ── Round rendering ───────────────────────────────────────────────────────────
+function renderRound(rn, data) {
+  const panel = document.getElementById(`panel-r${rn}`);
+  if (!panel) return;
+
+  const {
+    claim_audit = [], contradictions = [], pressure_applied = [],
+    non_obvious_findings = [], pressure_questions = [], round_verdict = {}
+  } = data;
+
+  const claimsHtml = claim_audit.length ? claim_audit.map(c => `
+    <div class="claim-row">
+      <div class="claim-badges">
+        <span class="badge badge-${c.type || 'fact'}">${esc(c.type || 'fact')}</span>
+        <span class="badge badge-${c.sourced ? 'sourced' : 'unsourced'}">${c.sourced ? 'sourced' : 'unsourced'}</span>
+        ${agentBadge(c.agent)}
+      </div>
+      <div class="claim-text">${esc(c.claim)}</div>
+      ${c.flag ? `<div class="claim-flag">⚑ ${esc(c.flag)}</div>` : ''}
+    </div>
+  `).join('') : '<div style="color:var(--dim);font-size:.82rem">No claims audited</div>';
+
+  const contraHtml = contradictions.length ? contradictions.map(ct => `
+    <div class="contra-row">
+      <div class="contra-agents">
+        <span class="badge badge-fact">${esc(ct.agent_a)}</span>
+        <span class="contra-vs">vs</span>
+        <span class="badge badge-fact">${esc(ct.agent_b)}</span>
+        <span class="badge badge-${ct.status}">${esc(ct.status)}</span>
+      </div>
+      <div class="contra-claims">
+        <div class="contra-claim-a">${esc(ct.claim_a)}</div>
+        <div class="contra-claim-b">${esc(ct.claim_b)}</div>
+      </div>
+      <div class="contra-resolution">${esc(ct.resolution)}</div>
+    </div>
+  `).join('') : '<div style="color:var(--dim);font-size:.82rem">No contradictions found</div>';
+
+  const pressureHtml = pressure_applied.length ? pressure_applied.map(p => `
+    <div class="pressure-row">
+      <div class="claim-badges">${agentBadge(p.agent)}</div>
+      <div class="pressure-claim">${esc(p.claim)}</div>
+      <div class="pressure-challenge">${esc(p.challenge)}</div>
+      <div class="pressure-verdict">${esc(p.verdict)}</div>
+    </div>
+  `).join('') : '<div style="color:var(--dim);font-size:.82rem">No pressure applied</div>';
+
+  const findingsHtml = non_obvious_findings.length ? non_obvious_findings.map(f =>
+    `<div class="finding-bullet">${esc(f)}</div>`
+  ).join('') : '<div style="color:var(--dim);font-size:.82rem">No cross-agent findings</div>';
+
+  const pqHtml = pressure_questions.length ? pressure_questions.map(pq => `
+    <div class="pq-row">
+      <div class="pq-question">${esc(pq.question)}</div>
+      <div class="pq-meta">
+        <span class="badge badge-agent">${esc(pq.directed_to)}</span>
+        <span>${esc(pq.why_unresolved)}</span>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--dim);font-size:.82rem">No follow-up questions</div>';
+
+  panel.innerHTML = `
+    <div class="round-grid">
+      <div class="round-card">
+        <div class="round-card-header">Claim Audit</div>
+        <div class="round-card-body">${claimsHtml}</div>
+      </div>
+      <div class="round-card">
+        <div class="round-card-header">Contradictions</div>
+        <div class="round-card-body">${contraHtml}</div>
+      </div>
+    </div>
+
+    <div class="round-card" style="margin-bottom:1rem">
+      <div class="round-card-header">Pressure Applied</div>
+      <div class="round-card-body">${pressureHtml}</div>
+    </div>
+
+    <div class="round-grid">
+      <div class="round-card">
+        <div class="round-card-header">Non-Obvious Findings</div>
+        <div class="round-card-body">${findingsHtml}</div>
+      </div>
+      <div class="round-card">
+        <div class="round-card-header">Pressure Questions → Next Round</div>
+        <div class="round-card-body">${pqHtml}</div>
+      </div>
+    </div>
+
+    <div class="verdict-card">
+      <div class="verdict-field">
+        <div class="verdict-field-label">Established</div>
+        <div class="verdict-established">${esc(round_verdict.established || '—')}</div>
+      </div>
+      <div class="verdict-field">
+        <div class="verdict-field-label">Contested</div>
+        <div class="verdict-contested">${esc(round_verdict.contested || '—')}</div>
+      </div>
+      <div class="verdict-field">
+        <div class="verdict-field-label">Delta — what changed</div>
+        <div class="verdict-delta">${esc(round_verdict.delta || '—')}</div>
+      </div>
+    </div>
+  `;
+
+  // Switch to this round if it's the latest
+  if (rn >= activeRound) switchRound(rn);
+}
+
+// ── Final report ──────────────────────────────────────────────────────────────
+function renderFinalReport(data) {
+  const {
+    executive_summary = '',
+    validated_claims = [],
+    contested_claims = [],
+    cross_agent_syntheses = [],
+    trajectories = [],
+    critical_blindspots = [],
+    analyst_note = '',
+  } = data;
+
+  const trajHtml = trajectories.map((t, i) => {
+    const confPct = t.confidence_pct || 0;
+    const cls = trajConfClass(confPct);
+    const suppHtml = (t.supporting_evidence || []).map(ev =>
+      `<div class="traj-ev-item supporting">${esc(ev)}</div>`
+    ).join('');
+    const cntHtml = (t.countervailing_evidence || []).map(ev =>
+      `<div class="traj-ev-item counter">${esc(ev)}</div>`
+    ).join('');
+    return `
+      <div class="trajectory-card ${cls}">
+        <div class="trajectory-header">
+          <div class="trajectory-label">${esc(t.label || `Path ${i+1}`)}</div>
+          <div class="trajectory-conf">${confPct}% confidence</div>
+        </div>
+        <div class="trajectory-desc">${esc(t.description || '')}</div>
+        <div class="trajectory-evidence-grid">
+          <div class="traj-ev-section">
+            <div class="traj-ev-label supporting">Supporting Evidence</div>
+            ${suppHtml || '<div class="traj-ev-item" style="color:var(--dim)">None listed</div>'}
+          </div>
+          <div class="traj-ev-section">
+            <div class="traj-ev-label counter">Countervailing Evidence</div>
+            ${cntHtml || '<div class="traj-ev-item" style="color:var(--dim)">None listed</div>'}
+          </div>
+        </div>
+        <div class="trajectory-meta">
+          ${t.key_variable ? `
+            <div class="traj-meta-item">
+              <div class="traj-meta-label">Key Variable</div>
+              <div class="traj-meta-value">${esc(t.key_variable)}</div>
+            </div>` : ''}
+          ${t.falsifiable_test ? `
+            <div class="traj-meta-item">
+              <div class="traj-meta-label">Falsifiable Test</div>
+              <div class="traj-meta-value">${esc(t.falsifiable_test)}</div>
+            </div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const listHtml = (items, cls) => items.length
+    ? items.map(s => `<li>${esc(s)}</li>`).join('')
+    : `<li style="color:var(--dim)">None</li>`;
+
+  finalContent.innerHTML = `
+    <div class="final-card">
+      <div class="final-card-title">Executive Summary</div>
+      <div class="executive-text">${esc(executive_summary)}</div>
+    </div>
+
+    ${trajectories.length ? `
+    <div class="final-card">
+      <div class="final-card-title">Trajectory Paths</div>
+      ${trajHtml}
+    </div>` : ''}
+
+    <div class="round-grid">
+      <div class="final-card" style="margin-bottom:0">
+        <div class="final-card-title">Validated Claims</div>
+        <ul class="claim-list validated-list">${listHtml(validated_claims, 'validated')}</ul>
+      </div>
+      <div class="final-card" style="margin-bottom:0">
+        <div class="final-card-title">Contested Claims</div>
+        <ul class="claim-list contested-list">${listHtml(contested_claims, 'contested')}</ul>
+      </div>
+    </div>
+
+    <div style="height:.75rem"></div>
+
+    <div class="round-grid">
+      <div class="final-card" style="margin-bottom:0">
+        <div class="final-card-title">Cross-Agent Syntheses</div>
+        <ul class="claim-list synthesis-list">${listHtml(cross_agent_syntheses, 'synthesis')}</ul>
+      </div>
+      <div class="final-card" style="margin-bottom:0">
+        <div class="final-card-title">Critical Blindspots</div>
+        <ul class="claim-list blindspot-list">${listHtml(critical_blindspots, 'blindspot')}</ul>
+      </div>
+    </div>
+
+    ${analyst_note ? `
+    <div style="height:.75rem"></div>
+    <div class="final-card">
+      <div class="final-card-title">Analyst Note</div>
+      <div class="analyst-note">${esc(analyst_note)}</div>
+    </div>` : ''}
+  `;
+}
+
+// ── Start analysis ────────────────────────────────────────────────────────────
+function startAnalysis() {
+  const q = queryInput.value.trim();
+  if (!q || q.length < 5) {
+    showError('Please enter a research query (at least 5 characters).');
+    return;
+  }
+
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+
+  resetUI();
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = 'Running…';
+  setStatus('Connecting…', 'active');
+
+  const url = `/analyze/stream?q=${encodeURIComponent(q)}`;
+  eventSource = new EventSource(url);
+  eventSource.onmessage = handleEvent;
+  eventSource.onerror = (e) => {
+    // SSE fires onerror on natural close too — only show error if not done
+    if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+      if (statusBadge.classList.contains('done')) return;
+      showError('Connection lost. The server may have timed out.');
+      setStatus('Error', 'error');
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = 'Analyze';
+    }
+  };
+}
+
+analyzeBtn.addEventListener('click', startAnalysis);
+</script>
+</body>
+</html>
